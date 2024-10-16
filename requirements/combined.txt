@@ -1,0 +1,1062 @@
+# Project Overview and Requirements
+
+## 1. Project Goal
+The project is a client library for interacting with Large Language Models (LLMs), specifically tailored for OpenAI's API but absolutely extensible to other LLM providers.
+
+## 2. Core Components
+
+### 2.1 LLM Client
+- Manages the overall interaction with the LLM service
+- Handles message history and tool management
+- Interfaces with the Translator and HTTP Client
+
+### 2.2 Translator
+- Converts internal data structures to API-specific formats
+- Currently implements OpenAI's API requirements
+- Extensible for potential future API integrations
+
+### 2.3 HTTP Client
+- Provides asynchronous HTTP operations
+- Supports various HTTP methods (GET, POST, PUT, PATCH, DELETE)
+- Handles request/response cycle
+
+### 2.4 Core Data Structures
+- Message: Represents various types of messages in the conversation
+- Tool: Represents function-calling capabilities
+- Parameter: Defines parameters for tools
+
+## 3. Key Requirements
+
+### 3.1 Flexibility
+- Support for different types of messages (system, user, assistant, tool calls, tool results)
+- Extensible design to accommodate future LLM features
+
+### 3.2 API Compatibility
+- Accurate translation of internal structures to OpenAI API format
+- Support for all relevant OpenAI API parameters
+
+### 3.3 Asynchronous Operations
+- Non-blocking HTTP requests
+- Ability to handle streaming responses
+
+### 3.4 Error Handling
+- Robust error handling across all components
+- Meaningful error messages and exceptions
+
+### 3.5 Thread Safety
+- Thread-safe design for concurrent operations
+
+### 3.6 Performance
+- Efficient handling of large messages and responses
+- Optimized JSON parsing and generation
+
+### 3.7 Testability
+- Comprehensive unit testing for all components
+- Mocking of HTTP responses for testing
+
+## 4. Non-Functional Requirements
+
+### 4.1 Usability
+- Simple and intuitive API for end-users of the library
+- Clear documentation and usage examples
+
+### 4.2 Maintainability
+- Well-structured code with clear separation of concerns
+- Use of modern C++ features and best practices
+
+### 4.3 Portability
+- Cross-platform compatibility (implied by use of CMake and standard C++)
+
+### 4.4 Security
+- Secure handling of API keys and sensitive data
+- Proper error handling to prevent information leakage
+
+## 5. Future Considerations
+
+### 5.1 Multi-Provider Support
+- Potential extension to support other LLM providers beyond OpenAI
+
+### 5.2 Advanced Features
+- Support for more complex conversation flows
+- Integration with local LLM models
+
+### 5.3 Performance Optimization
+- Potential for response streaming and incremental processing
+- Caching mechanisms for improved efficiency
+
+## 6. Build and Deployment
+
+### 6.1 Build System
+- Use of CMake for cross-platform build configuration
+
+### 6.2 Dependency Management
+- Clear specification of external dependencies (e.g., nlohmann/json, CURL)
+
+### 6.3 Continuous Integration
+- Implied requirement for CI/CD pipeline (based on comprehensive test suite)
+
+This overview provides a high-level understanding of the project's requirements and structure. The actual implementation may vary or include additional features not apparent from the provided source files.
+Certainly! I'll create a requirements document for the directory structure, focusing on the organization, CMakeLists.txt files, and the reasoning behind the structure where possible.
+
+Requirements Document: Project Directory Structure
+
+1. Overview:
+   The project follows a hierarchical directory structure that separates source code, tests, and build configuration. This organization promotes modularity, ease of navigation, and clear separation of concerns.
+
+2. Root Directory:
+   - Contains the top-level CMakeLists.txt file
+   - Purpose: Defines the project and sets global configurations
+
+3. src/ Directory:
+   - Purpose: Contains all source code for the project
+   - CMakeLists.txt location: src/CMakeLists.txt
+   - Why: Centralizes build configuration for all source code subdirectories
+
+   3.1. src/core/
+       - Purpose: Contains core data structures and classes used throughout the project
+       - Files: message.hpp, message.cpp, parameter.hpp, parameter.cpp, tool.hpp, tool.cpp
+       - CMakeLists.txt location: src/core/CMakeLists.txt
+       - Why: Allows independent compilation of core components and easy linking for other modules
+
+   3.2. src/http_client/
+       - Purpose: Contains HTTP client implementation
+       - Subdirectories:
+         - include/http_client/: Public headers
+         - src/: Implementation files
+       - CMakeLists.txt location: src/http_client/CMakeLists.txt
+       - Why: Separates HTTP client logic, allowing for potential replacement or multiple implementations
+
+   3.3. src/translator/
+       - Purpose: Contains translator implementations for different APIs
+       - Files: openai_translator.hpp, openai_translator.cpp, itranslator.hpp
+       - CMakeLists.txt location: src/translator/CMakeLists.txt
+       - Why: Isolates API-specific translation logic, facilitating easy addition of new API translators
+
+   3.4. src/client/
+       - Purpose: Contains the main LLM client implementation
+       - Files: llm_client.hpp, llm_client.cpp
+       - CMakeLists.txt location: src/client/CMakeLists.txt
+       - Why: Separates the high-level client logic from other components
+
+4. tests/ Directory:
+   - Purpose: Contains all test files for the project
+   - CMakeLists.txt location: tests/CMakeLists.txt
+   - Why: Centralizes test configuration and allows for easy addition of new test suites
+
+   4.1. tests/core/
+       - Purpose: Contains tests for core components
+       - Files: message_test.cpp, parameter_test.cpp, tool_test.cpp
+       - CMakeLists.txt location: tests/core/CMakeLists.txt
+       - Why: Allows for independent testing of core components
+
+   4.2. tests/http_client/
+       - Purpose: Contains tests for the HTTP client
+       - Subdirectories:
+         - unit_tests/: Contains unit tests for HTTP client
+       - CMakeLists.txt location: tests/http_client/CMakeLists.txt
+       - Why: Separates HTTP client tests, allowing for different types of tests (unit, integration, etc.)
+
+   4.3. tests/llm_client/
+       - Purpose: Contains tests for the LLM client
+       - Files: (test files for LLM client)
+       - CMakeLists.txt location: tests/llm_client/CMakeLists.txt
+       - Why: Isolates LLM client tests, potentially including integration tests
+
+5. CMakeLists.txt Files:
+   - Each directory contains its own CMakeLists.txt file
+   - Why:
+     a. Modularity: Allows each component to define its own build requirements
+     b. Flexibility: Enables easy addition or removal of components from the build
+     c. Clarity: Keeps build configurations close to the relevant source code
+     d. Hierarchy: Supports a hierarchical build process where the root CMakeLists.txt includes subdirectories
+
+6. Additional Considerations:
+   - The structure allows for easy addition of new components or modules
+   - Separation of public headers (in include/ directories) from implementation files supports clear API boundaries
+   - Test directories mirror the structure of the src/ directory, making it easy to locate tests for specific components
+
+7. Potential Future Enhancements:
+   - Consider adding a docs/ directory for documentation if not already present
+   - If the project grows, consider adding a libs/ or external/ directory for third-party dependencies
+   - As the project evolves, maintain the parallel structure between src/ and tests/ directories
+
+This directory structure provides a clear organization for the project, separating concerns and allowing for modular development and testing. The use of individual CMakeLists.txt files in each directory supports this modularity in the build process, making it easier to manage and extend the project over time.
+Requirements Document: CMakeLists.txt Structure and Configuration
+
+1. Overview:
+   The project uses CMake as its build system, with a hierarchical structure of CMakeLists.txt files. Each directory contains its own CMakeLists.txt file, responsible for building the components within that directory and including relevant subdirectories.
+
+2. Global Considerations:
+   - Minimum CMake version: 3.10
+   - All external dependencies (e.g., JSON, cURL) are assumed to be installed system-wide
+   - No automatic fetching of dependencies is performed
+   - C++17 is used as the standard throughout the project
+
+3. Root CMakeLists.txt:
+   Location: ./CMakeLists.txt
+   Contents:
+   - Sets the project name and version
+   - Sets the C++ standard to C++17
+   - Includes the src/ and tests/ directories
+   - Finds required packages: GTest, CURL
+   - Sets global compile options (e.g., warnings)
+
+   Example:
+   ```cmake
+   cmake_minimum_required(VERSION 3.10)
+   project(LLMClient VERSION 1.0)
+
+   set(CMAKE_CXX_STANDARD 17)
+   set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+   find_package(GTest REQUIRED)
+   find_package(CURL REQUIRED)
+
+   add_subdirectory(src)
+   add_subdirectory(tests)
+
+   # Global compile options
+   add_compile_options(-Wall -Wextra -Wpedantic)
+   ```
+
+4. src/ CMakeLists.txt:
+   Location: ./src/CMakeLists.txt
+   Contents:
+   - Includes subdirectories: core, http_client, translator, client
+   
+   Example:
+   ```cmake
+   add_subdirectory(core)
+   add_subdirectory(http_client)
+   add_subdirectory(translator)
+   add_subdirectory(client)
+   ```
+
+5. src/core/ CMakeLists.txt:
+   Location: ./src/core/CMakeLists.txt
+   Contents:
+   - Defines the core library
+   - Specifies source files
+   - Sets include directories
+
+   Example:
+   ```cmake
+   add_library(core
+       message.cpp
+       parameter.cpp
+       tool.cpp
+   )
+
+   target_include_directories(core
+       PUBLIC
+           ${CMAKE_CURRENT_SOURCE_DIR}
+   )
+
+   set_target_properties(core PROPERTIES
+       VERSION ${PROJECT_VERSION}
+       SOVERSION ${PROJECT_VERSION_MAJOR}
+   )
+   ```
+
+6. src/http_client/ CMakeLists.txt:
+   Location: ./src/http_client/CMakeLists.txt
+   Contents:
+   - Defines the http_client library
+   - Links against system-wide cURL library
+   - Sets include directories
+
+   Example:
+   ```cmake
+   add_library(http_client
+       src/curl_http_client.cpp
+   )
+
+   target_include_directories(http_client
+       PUBLIC
+           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+           $<INSTALL_INTERFACE:include>
+       PRIVATE
+           ${CMAKE_CURRENT_SOURCE_DIR}/src
+   )
+
+   target_link_libraries(http_client PRIVATE CURL::libcurl)
+
+   set_target_properties(http_client PROPERTIES
+       VERSION ${PROJECT_VERSION}
+       SOVERSION ${PROJECT_VERSION_MAJOR}
+   )
+   ```
+
+7. src/translator/ CMakeLists.txt:
+   Location: ./src/translator/CMakeLists.txt
+   Contents:
+   - Defines the translator library
+   - Links against system-wide JSON library
+   - Sets include directories
+
+   Example:
+   ```cmake
+   add_library(translator
+       openai_translator.cpp
+   )
+
+   target_include_directories(translator
+       PUBLIC
+           ${CMAKE_CURRENT_SOURCE_DIR}
+           ${CMAKE_SOURCE_DIR}/src
+   )
+
+   target_link_libraries(translator
+       PRIVATE
+           core
+           nlohmann_json::nlohmann_json
+   )
+
+   set_target_properties(translator PROPERTIES
+       VERSION ${PROJECT_VERSION}
+       SOVERSION ${PROJECT_VERSION_MAJOR}
+   )
+   ```
+
+8. src/client/ CMakeLists.txt:
+   Location: ./src/client/CMakeLists.txt
+   Contents:
+   - Defines the llm_client library
+   - Links against other project libraries
+   - Sets include directories
+
+   Example:
+   ```cmake
+   add_library(llm_client
+       llm_client.cpp
+   )
+
+   target_include_directories(llm_client
+       PUBLIC
+           ${CMAKE_CURRENT_SOURCE_DIR}
+           ${CMAKE_SOURCE_DIR}/src
+   )
+
+   target_link_libraries(llm_client
+       PRIVATE
+           core
+           translator
+           http_client
+   )
+
+   set_target_properties(llm_client PROPERTIES
+       VERSION ${PROJECT_VERSION}
+       SOVERSION ${PROJECT_VERSION_MAJOR}
+   )
+   ```
+
+9. tests/ CMakeLists.txt:
+   Location: ./tests/CMakeLists.txt
+   Contents:
+   - Includes test subdirectories
+   - Sets up test discovery
+
+   Example:
+   ```cmake
+   include(GoogleTest)
+
+   add_subdirectory(core)
+   add_subdirectory(http_client)
+   add_subdirectory(llm_client)
+
+   enable_testing()
+   ```
+
+10. Additional Considerations:
+    - Each CMakeLists.txt file is responsible for its own directory contents
+    - Dependencies are not automatically fetched; they must be installed system-wide
+    - The build system supports both Debug and Release configurations
+    - Installation rules should be defined in the root CMakeLists.txt file
+
+11. Best Practices:
+    - Use target_link_libraries() with PRIVATE, PUBLIC, or INTERFACE specifiers
+    - Use generator expressions for build-interface vs. install-interface includes
+    - Set project-wide properties and options in the root CMakeLists.txt
+    - Use find_package() for system-wide installed libraries
+    - Avoid hardcoding paths; use CMake variables like CMAKE_CURRENT_SOURCE_DIR
+
+12. Testing:
+    - Use GoogleTest for unit testing
+    - Each test directory should have its own CMakeLists.txt file
+    - Use gtest_discover_tests() for automatic test discovery
+# Message Class Requirements Document
+
+## 1. Overview
+The Message class represents a single message in a conversation with an AI model. It encapsulates various attributes of a message, including its type, content, and associated metadata.
+
+## 2. Class Definition
+
+### 2.1 File Location
+- Header file: src/core/message.hpp
+- Implementation file: src/core/message.cpp
+
+### 2.2 Class Declaration
+```cpp
+class Message {
+public:
+    enum class Type { System, User, Assistant, ToolCall, ToolResult };
+    
+    Message(Type type);
+    virtual ~Message() = default;
+    
+    Type getType() const;
+    
+    // Public member variables
+    std::string content;
+    std::optional<std::string> created;
+    std::optional<std::string> finish_reason;
+    std::optional<int> prompt_tokens;
+    std::optional<int> completion_tokens;
+    std::optional<int> total_tokens;
+    std::optional<std::string> model;
+    std::optional<double> temperature;
+    std::optional<double> top_p;
+    std::optional<int> max_tokens;
+    std::optional<int> logprobs;
+    std::optional<bool> stream;
+    std::optional<int> random_seed;
+    std::optional<std::string> response_format_type;
+
+protected:
+    Type type_;
+};
+```
+
+## 3. Enumerations
+
+### 3.1 Message Type
+```cpp
+enum class Type { System, User, Assistant, ToolCall, ToolResult };
+```
+- System: Represents system messages or instructions
+- User: Represents user input or queries
+- Assistant: Represents AI model responses
+- ToolCall: Represents a request to use a specific tool
+- ToolResult: Represents the result of a tool operation
+
+## 4. Constructors and Destructor
+
+### 4.1 Constructor
+```cpp
+Message(Type type);
+```
+- Initializes a new Message object with the specified type
+- Sets the `type_` member variable
+
+### 4.2 Destructor
+```cpp
+virtual ~Message() = default;
+```
+- Virtual destructor to allow for proper cleanup in derived classes
+
+## 5. Public Methods
+
+### 5.1 getType
+```cpp
+Type getType() const;
+```
+- Returns the type of the message
+- Should be a const method as it doesn't modify the object
+
+## 6. Member Variables
+
+### 6.1 Required Members
+- `content` (std::string): The main content of the message
+
+### 6.2 Optional Members
+All optional members should use std::optional to indicate their optional nature:
+
+- `created` (std::optional<std::string>): Timestamp of message creation
+- `finish_reason` (std::optional<std::string>): Reason for finishing the response
+- `prompt_tokens` (std::optional<int>): Number of tokens in the prompt
+- `completion_tokens` (std::optional<int>): Number of tokens in the completion
+- `total_tokens` (std::optional<int>): Total number of tokens used
+- `model` (std::optional<std::string>): The model used for this message
+- `temperature` (std::optional<double>): Sampling temperature
+- `top_p` (std::optional<double>): Nucleus sampling parameter
+- `max_tokens` (std::optional<int>): Maximum number of tokens to generate
+- `logprobs` (std::optional<int>): Number of log probabilities to generate
+- `stream` (std::optional<bool>): Whether to stream the response
+- `random_seed` (std::optional<int>): Random seed for deterministic output
+- `response_format_type` (std::optional<std::string>): Desired response format
+
+## 7. Protected Members
+- `type_` (Type): Stores the type of the message
+
+## 8. Functionality Requirements
+
+### 8.1 Type Safety
+- The `Type` enum class should be used to ensure type safety when setting or comparing message types
+
+### 8.2 Immutable Type
+- The message type should be set at construction and should not be modifiable afterwards
+
+### 8.3 Optional Field Handling
+- All optional fields should be easily checkable for the presence of a value
+- Accessing an optional field without a value should throw an exception or have well-defined behavior
+
+### 8.4 Serialization Support
+- While not implemented in the class itself, the Message class should be designed to support easy serialization and deserialization (e.g., to/from JSON)
+
+## 9. Memory Management
+- The class should follow the Rule of Zero or Rule of Five
+- If dynamic memory allocation is needed in derived classes, ensure proper memory management
+
+## 10. Thread Safety
+- The class should be thread-safe for const operations
+- Mutable operations should be clearly documented if they are not thread-safe
+
+## 11. Performance Considerations
+- Consider using move semantics for efficient handling of the content string and other large data members
+- Evaluate the performance impact of using std::optional for all optional fields
+
+## 12. Extensibility
+- The class should be designed to allow easy extension for future message types or additional fields
+- Consider using a version number or similar mechanism to handle potential future changes in the message format
+
+## 13. Error Handling
+- Implement proper error handling for invalid operations (e.g., accessing unset optional fields)
+- Use exceptions or error codes as appropriate for the project's error handling strategy
+
+## 14. Testing Requirements
+- Unit tests should cover:
+  - Construction with different types
+  - Getting and setting all fields
+  - Proper handling of optional fields
+  - Any complex logic in derived classes
+- Consider property-based testing for fields with constraints (e.g., temperature range)
+
+## 15. Documentation
+- All public methods and member variables should have clear, concise documentation
+- Include usage examples in the class documentation
+- Document any assumptions or constraints on the values of fields
+
+## 16. Compliance
+- Ensure the class adheres to any relevant coding standards or guidelines used in the project
+- Consider any data protection or privacy implications of storing message content
+
+## 17. Internationalization
+- If applicable, ensure the class can handle content in various languages and character sets
+
+## 18. Future Considerations
+- Plan for potential future requirements such as message encryption, compression, or additional metadata fields
+Class: Tool
+
+1. Language and Environment:
+   - Implemented in C++
+   - No specific C++ version requirements noted, but likely C++11 or later due to the use of std::vector
+
+2. Class Definition:
+   - Defined in header file: src/core/tool.hpp
+   - No inheritance specified
+   - Class is designed to represent a tool or function that can be used by an AI system
+
+3. Member Variables (all public):
+   - std::string name: Stores the name of the tool
+   - std::string description: Stores a description of the tool's purpose or functionality
+   - std::vector<Parameter> parameters: Stores a list of parameters that the tool accepts
+
+4. Constructors and Destructors:
+   - Default constructor (implicitly defined)
+   - No explicit destructor defined (using default)
+   - Copy constructor (implicitly defined)
+   - Move constructor (implicitly defined)
+
+5. Member Functions:
+   - No explicit member functions defined
+
+6. Operator Overloads:
+   - No explicit operator overloads defined
+
+7. Thread Safety:
+   - The class itself is not thread-safe
+   - Thread safety should be implemented externally if needed in multi-threaded contexts
+
+8. Usage in Other Components:
+   - Used in the LLMClient class as part of a vector of tools (std::vector<Tool> tools_)
+   - Serialized by the OpenAITranslator class for API requests
+
+9. Serialization:
+   - No built-in serialization methods
+   - Serialized externally by OpenAITranslator class to JSON format
+
+10. Memory Management:
+    - Relies on standard C++ memory management for std::string and std::vector
+    - No explicit dynamic memory allocation
+
+11. Error Handling:
+    - No specific error handling mechanisms
+
+12. Constraints and Invariants:
+    - No explicit constraints or invariants defined
+    - Implicit constraint: 'name' and 'description' should not be empty when used in API requests
+
+13. Performance Considerations:
+    - No specific performance optimizations noted
+    - Consider the impact of potentially large numbers of parameters on performance
+
+14. Testing Requirements:
+    - Unit tests should cover:
+      a. Default construction
+      b. Field assignment (name, description, parameters)
+      c. Adding and accessing parameters
+      d. Tools with no parameters
+      e. Tools with multiple parameters
+      f. Copy construction
+      g. Move construction
+
+15. Dependencies:
+    - Standard C++ library (for std::string and std::vector)
+    - Parameter class (defined in parameter.hpp)
+
+16. Namespace:
+    - Not enclosed in any specific namespace
+
+17. File Organization:
+    - Declaration in src/core/tool.hpp
+    - Implementation (if any) in src/core/tool.cpp
+
+18. Usage Patterns:
+    - Typically created and populated with data before being added to an LLMClient object
+    - Used in read-only manner when serializing for API requests
+
+19. Extensibility:
+    - Can be extended by adding new member variables if needed
+    - Consider adding methods for parameter manipulation if more complex operations are required in the future
+
+20. Documentation:
+    - No specific documentation requirements noted
+    - Inline comments for member variables and any future methods would be beneficial
+
+21. Relationship with Parameter class:
+    - The Tool class contains a vector of Parameter objects
+    - Each Parameter in the vector represents an input that the tool accepts
+    - The Parameter class should have its own separate requirements document
+
+Note: If more complex operations on tools become necessary in the future (e.g., parameter validation, execution of the tool's function), consider adding appropriate member functions to the Tool class. Also, if thread safety becomes a requirement, it is recommended to implement it via a wrapper class or in the containing LLMClient class rather than modifying the Tool class itself.
+Class: Parameter
+
+1. Language and Environment:
+   - Implemented in C++
+   - No specific C++ version requirements noted
+
+2. Class Definition:
+   - Defined in header file (likely parameter.hpp)
+   - No inheritance specified
+
+3. Member Variables (all public):
+   - std::string name: Stores the name of the parameter
+   - std::string type: Stores the type of the parameter (e.g., "number", "string", "integer")
+   - std::string description: Stores a description of the parameter
+   - bool required: Indicates whether the parameter is required or optional (default initialized to false)
+   - std::vector<std::string> enum_values: Stores possible values for enumerated parameters (default initialized to an empty vector)
+
+4. Constructors and Destructors:
+   - Default constructor (implicitly defined)
+   - No explicit destructor defined (using default)
+   - Copy constructor (implicitly defined)
+   - Move constructor (implicitly defined)
+
+5. Member Functions:
+   - No explicit member functions defined
+
+6. Operator Overloads:
+   - No explicit operator overloads defined
+
+7. Thread Safety:
+   - The class itself is not thread-safe
+   - Thread safety can be implemented externally (e.g., via a wrapper class) if needed in multi-threaded contexts
+
+8. Usage in Other Classes:
+   - Used in the Tool class as a member variable (std::vector<Parameter> parameters)
+   - Serialized by the OpenAITranslator class for API requests
+
+9. Serialization:
+   - No built-in serialization methods
+   - Serialized externally by OpenAITranslator class to JSON format
+
+10. Memory Management:
+    - Relies on standard C++ memory management for std::string and std::vector
+    - No explicit dynamic memory allocation
+
+11. Error Handling:
+    - No specific error handling mechanisms
+
+12. Constraints and Invariants:
+    - No explicit constraints or invariants defined
+
+13. Performance Considerations:
+    - No specific performance optimizations noted
+
+14. Testing Requirements:
+    - Unit tests should cover:
+      a. Default construction
+      b. Field assignment
+      c. Empty and non-empty enum_values
+      d. Copy construction
+      e. Move construction
+
+15. Dependencies:
+    - Standard C++ library (for std::string and std::vector)
+
+16. Namespace:
+    - Not enclosed in any specific namespace
+
+17. File Organization:
+    - Declaration likely in parameter.hpp
+    - No separate implementation file (.cpp) needed for this simple struct-like class
+
+18. Usage Patterns:
+    - Typically created and populated with data before being added to a Tool object
+    - Used in read-only manner when serializing for API requests
+
+19. Extensibility:
+    - Can be extended by adding new member variables if needed
+
+20. Documentation:
+    - No specific documentation requirements noted, but inline comments for member variables would be beneficial
+
+Note: If thread safety becomes a requirement in the future, it is recommended to implement it via a wrapper class rather than modifying the Parameter class itself. This maintains the simplicity and flexibility of the current design.
+Requirements Document: ITranslator Interface
+
+1. Language and Environment:
+   - Implemented in C++
+   - Requires C++11 or later (due to the use of std::unique_ptr and std::vector)
+
+2. Interface Definition:
+   - Defined in header file: src/translator/itranslator.hpp
+   - Pure virtual interface (abstract base class)
+
+3. Virtual Methods:
+   a. messageToJSON:
+      - Purpose: Converts a Message object to its JSON representation
+      - Parameters: const Message& message
+      - Returns: std::string (JSON string)
+      - Pure virtual (= 0)
+
+   b. toolToJSON:
+      - Purpose: Converts a Tool object to its JSON representation
+      - Parameters: const Tool& tool
+      - Returns: std::string (JSON string)
+      - Pure virtual (= 0)
+
+   c. createRequest:
+      - Purpose: Creates a complete JSON request from a vector of messages and tools
+      - Parameters: 
+        - const std::vector<std::unique_ptr<Message>>& messages
+        - const std::vector<Tool>& tools
+      - Returns: std::string (JSON string representing the full request)
+      - Pure virtual (= 0)
+
+4. Destructor:
+   - Virtual destructor (= default)
+   - Ensures proper cleanup of derived classes
+
+5. Usage:
+   - Intended to be subclassed by specific translator implementations (e.g., OpenAITranslator)
+   - Used polymorphically through pointers or references to ITranslator
+
+6. Thread Safety:
+   - The interface itself doesn't guarantee thread safety
+   - Implementations should document their thread safety guarantees
+
+7. Error Handling:
+   - Introduce a TranslationException class for handling translator-specific errors
+   - All methods in ITranslator should be declared noexcept(false) to indicate they may throw exceptions
+   - Implementations should throw TranslationException for any translation-related errors
+
+8. Output Format:
+   - All output methods (messageToJSON, toolToJSON, createRequest) must return std::string containing valid JSON
+   - Add a new method parseJSONToMessage that accepts a std::string containing valid JSON and returns a std::unique_ptr<Message>
+
+9. Statelessness:
+    - All translator methods must be stateless
+    - Any required state should be passed as parameters to the methods
+
+10. Performance Considerations:
+    - Future enhancement: Add support for caching/serializing translated objects to disk
+    - This could be implemented as an optional feature in derived classes
+
+11. Dependencies:
+   - Includes "core/message.hpp" and "core/tool.hpp"
+
+12. Namespace:
+   - Not enclosed in any specific namespace
+
+13. Extensibility:
+    - New methods can be added to the interface as needed for future API requirements
+    - Existing methods should not be modified to maintain backward compatibility
+
+14. Documentation:
+    - Each virtual method should have a clear documentation comment describing its purpose, parameters, and return value
+
+15. Testing:
+    - Concrete implementations of this interface should be thoroughly tested
+    - Consider creating a mock implementation for testing classes that use ITranslator
+
+Here's an example of how the ITranslator interface might look:
+
+```cpp
+// itranslator.hpp
+#pragma once
+#include "core/message.hpp"
+#include "core/tool.hpp"
+#include "translator/translation_exception.hpp"
+#include <memory>
+#include <string>
+#include <vector>
+
+class ITranslator {
+public:
+    virtual ~ITranslator() = default;
+    virtual std::string messageToJSON(const Message& message) const noexcept(false) = 0;
+    virtual std::string toolToJSON(const Tool& tool) const noexcept(false) = 0;
+    virtual std::string createRequest(const std::vector<std::unique_ptr<Message>>& messages,
+                                      const std::vector<Tool>& tools) const noexcept(false) = 0;
+    virtual std::unique_ptr<Message> parseJSONToMessage(const std::string& json) const noexcept(false) = 0;
+};
+
+// translation_exception.hpp
+#pragma once
+#include <stdexcept>
+#include <string>
+
+class TranslationException : public std::runtime_error {
+public:
+    explicit TranslationException(const std::string& message) : std::runtime_error(message) {}
+};
+```
+Requirements Document: TranslationException Class
+
+1. Language and Environment:
+   - Implemented in C++
+   - Requires C++11 or later
+
+2. Class Definition:
+   - Defined in a new header file: src/translator/translation_exception.hpp
+   - Inherits from std::runtime_error
+
+3. Constructors:
+   - Explicit constructor taking a std::string error message
+   - (Optional) Constructor taking an error code and a message
+
+4. Methods:
+   - what(): Returns the error message (inherited from std::runtime_error)
+   - (Optional) getErrorCode(): Returns the error code if implemented
+
+5. Usage:
+   - Thrown by ITranslator implementations when encountering translation-related errors
+
+6. Thread Safety:
+   - Should be thread-safe for concurrent access (readonly after construction)
+
+# OpenAITranslator Requirements Document
+
+## 1. Overview
+The OpenAITranslator class is responsible for translating internal data structures to JSON format compatible with the OpenAI API. It implements the ITranslator interface.
+
+## 2. Class Definition
+- Inherits from: ITranslator
+- Header file: openai_translator.hpp
+- Implementation file: openai_translator.cpp
+
+## 3. Dependencies
+- nlohmann/json library for JSON manipulation
+- Core data structures: Message, Tool, Parameter
+
+## 4. Public Methods
+4.1 messageToJSON
+- Input: const Message& message
+- Output: std::string (JSON representation)
+- Purpose: Convert a Message object to JSON string
+
+4.2 toolToJSON
+- Input: const Tool& tool
+- Output: std::string (JSON representation)
+- Purpose: Convert a Tool object to JSON string
+
+4.3 createRequest
+- Input: 
+  - const std::vector<std::unique_ptr<Message>>& messages
+  - const std::vector<Tool>& tools
+- Output: std::string (JSON representation of the complete request)
+- Purpose: Create a full request JSON string from messages and tools
+
+## 5. Private Methods
+5.1 messageToJSONObject
+- Input: const Message& message
+- Output: nlohmann::json
+- Purpose: Convert a Message object to a JSON object
+
+5.2 toolToJSONObject
+- Input: const Tool& tool
+- Output: nlohmann::json
+- Purpose: Convert a Tool object to a JSON object
+
+5.3 parameterToJSONObject
+- Input: const Parameter& param
+- Output: nlohmann::json
+- Purpose: Convert a Parameter object to a JSON object
+
+## 6. Functionality Requirements
+6.1 Message Translation
+- Convert Message type to appropriate role string
+- Include all relevant fields from the Message object
+- Handle optional fields appropriately
+
+6.2 Tool Translation
+- Convert Tool to function-calling format
+- Include name, description, and parameters
+- Handle required parameters
+
+6.3 Request Creation
+- Combine messages and tools into a single request
+- Include model and other relevant parameters from the user message
+- Ensure compatibility with OpenAI API format
+
+## 7. Error Handling
+- Throw appropriate exceptions for invalid inputs or conversion errors
+
+## 8. Performance Considerations
+- Efficient JSON manipulation using nlohmann/json library
+- Avoid unnecessary copying of large data structures
+
+## 9. Testing Requirements
+- Unit tests for each public method
+- Test various combinations of optional fields
+- Ensure correct handling of edge cases (empty messages, tools without parameters, etc.)
+# HTTP Client Requirements Document
+
+## 1. Overview
+The HTTP client should provide a simple interface for making HTTP requests. It should support common HTTP methods and handle responses appropriately.
+
+## 2. Interface
+The client should implement the following public methods:
+
+- Get(uri, headers)
+- Put(uri, body, headers)
+- Post(uri, body, headers)
+- Patch(uri, body, headers)
+- Delete(uri, headers)
+
+## 3. Functionality Requirements
+
+### 3.1 HTTP Methods
+- Support for GET, PUT, POST, PATCH, and DELETE methods
+- Each method should accept a URI and optional headers
+- PUT, POST, and PATCH methods should also accept a request body
+
+### 3.2 Request Handling
+- Allow setting custom headers for each request
+- Support for sending request bodies (for PUT, POST, PATCH)
+- Ability to set a timeout for requests
+
+### 3.3 Response Handling
+- Return a response object containing:
+  - Status code
+  - Response headers
+  - Response body
+
+### 3.4 Asynchronous Operations
+- All methods should return a future or promise to allow for asynchronous operations
+
+### 3.5 Error Handling
+- Throw exceptions for network errors, invalid URIs, etc.
+- Provide meaningful error messages
+
+### 3.6 Timeout Management
+- Allow setting a global timeout for all requests
+- Provide a method to get the current timeout setting
+
+## 4. Non-functional Requirements
+
+### 4.1 Thread Safety
+- The client should be thread-safe, allowing concurrent requests from multiple threads
+
+### 4.2 Extensibility
+- The design should allow for easy addition of new HTTP methods or features in the future
+
+## 5. Out of Scope
+- Specific implementation details (e.g., choice of underlying HTTP library)
+- SSL/TLS certificate handling
+- Authentication mechanisms
+- Automatic retries
+- Request/response streaming
+Report: Creating a Comprehensive Requirements Document
+
+1. Purpose:
+   This report outlines the process for creating a detailed requirements document for a software component or class. The document should provide sufficient information for another developer or LLM to accurately recreate and understand the component's role within a larger system.
+
+2. Process Overview:
+   a. Gather all relevant source files (headers, implementation, tests).
+   b. Analyze the component's structure, behavior, and usage.
+   c. Systematically document each aspect of the component.
+   d. Review and refine the document for completeness and clarity.
+
+3. Document Structure:
+   Organize the requirements document into the following sections:
+
+   a. Component Identification
+   b. Language and Environment
+   c. Class/Component Definition
+   d. Member Variables
+   e. Constructors and Destructors
+   f. Member Functions
+   g. Operator Overloads
+   h. Thread Safety
+   i. Usage in Other Components
+   j. Serialization
+   k. Memory Management
+   l. Error Handling
+   m. Constraints and Invariants
+   n. Performance Considerations
+   o. Testing Requirements
+   p. Dependencies
+   q. Namespace
+   r. File Organization
+   s. Usage Patterns
+   t. Extensibility
+   u. Documentation
+
+4. Detailed Process:
+
+   For each section:
+   
+   a. Examine the relevant parts of the source code.
+   b. Document the findings in clear, concise language.
+   c. Include code snippets or examples where they add clarity.
+   d. Note any uncertainties or areas needing further investigation.
+
+5. Special Considerations:
+
+   a. Complex Types:
+      - For member variables, parameters, or return types that are complex (custom classes or structs), note that a separate requirements document should exist or be created for that type.
+      - Briefly describe how the complex type is used in the context of the current component.
+
+   b. Thread Safety:
+      - If the component is not inherently thread-safe, state this clearly.
+      - Suggest potential external thread safety mechanisms if relevant.
+
+   c. External Dependencies:
+      - Clearly list all external libraries or components that this component depends on.
+
+   d. Future Considerations:
+      - If there are known plans for future modifications or extensions, include these in the relevant sections.
+
+6. Review and Refinement:
+   
+   a. After completing the initial draft, review the document for completeness.
+   b. Ensure that someone unfamiliar with the component could understand and potentially recreate it from this document.
+   c. Refine and clarify any ambiguous or unclear sections.
+
+7. Maintenance:
+
+   a. The requirements document should be updated whenever the component is modified.
+   b. Consider versioning the requirements document to track changes over time.
+
+By following this process, you will create a comprehensive and structured requirements document that captures all essential aspects of a software component or class. This document will serve as a valuable resource for understanding, maintaining, and potentially recreating the component in the future.

@@ -1,0 +1,85 @@
+Certainly! I'll create a requirements document for the directory structure, focusing on the organization, CMakeLists.txt files, and the reasoning behind the structure where possible.
+
+Requirements Document: Project Directory Structure
+
+1. Overview:
+   The project follows a hierarchical directory structure that separates source code, tests, and build configuration. This organization promotes modularity, ease of navigation, and clear separation of concerns.
+
+2. Root Directory:
+   - Contains the top-level CMakeLists.txt file
+   - Purpose: Defines the project and sets global configurations
+
+3. src/ Directory:
+   - Purpose: Contains all source code for the project
+   - CMakeLists.txt location: src/CMakeLists.txt
+   - Why: Centralizes build configuration for all source code subdirectories
+
+   3.1. src/core/
+       - Purpose: Contains core data structures and classes used throughout the project
+       - Files: message.hpp, message.cpp, parameter.hpp, parameter.cpp, tool.hpp, tool.cpp
+       - CMakeLists.txt location: src/core/CMakeLists.txt
+       - Why: Allows independent compilation of core components and easy linking for other modules
+
+   3.2. src/http_client/
+       - Purpose: Contains HTTP client implementation
+       - Subdirectories:
+         - include/http_client/: Public headers
+         - src/: Implementation files
+       - CMakeLists.txt location: src/http_client/CMakeLists.txt
+       - Why: Separates HTTP client logic, allowing for potential replacement or multiple implementations
+
+   3.3. src/translator/
+       - Purpose: Contains translator implementations for different APIs
+       - Files: openai_translator.hpp, openai_translator.cpp, itranslator.hpp
+       - CMakeLists.txt location: src/translator/CMakeLists.txt
+       - Why: Isolates API-specific translation logic, facilitating easy addition of new API translators
+
+   3.4. src/client/
+       - Purpose: Contains the main LLM client implementation
+       - Files: llm_client.hpp, llm_client.cpp
+       - CMakeLists.txt location: src/client/CMakeLists.txt
+       - Why: Separates the high-level client logic from other components
+
+4. tests/ Directory:
+   - Purpose: Contains all test files for the project
+   - CMakeLists.txt location: tests/CMakeLists.txt
+   - Why: Centralizes test configuration and allows for easy addition of new test suites
+
+   4.1. tests/core/
+       - Purpose: Contains tests for core components
+       - Files: message_test.cpp, parameter_test.cpp, tool_test.cpp
+       - CMakeLists.txt location: tests/core/CMakeLists.txt
+       - Why: Allows for independent testing of core components
+
+   4.2. tests/http_client/
+       - Purpose: Contains tests for the HTTP client
+       - Subdirectories:
+         - unit_tests/: Contains unit tests for HTTP client
+       - CMakeLists.txt location: tests/http_client/CMakeLists.txt
+       - Why: Separates HTTP client tests, allowing for different types of tests (unit, integration, etc.)
+
+   4.3. tests/llm_client/
+       - Purpose: Contains tests for the LLM client
+       - Files: (test files for LLM client)
+       - CMakeLists.txt location: tests/llm_client/CMakeLists.txt
+       - Why: Isolates LLM client tests, potentially including integration tests
+
+5. CMakeLists.txt Files:
+   - Each directory contains its own CMakeLists.txt file
+   - Why:
+     a. Modularity: Allows each component to define its own build requirements
+     b. Flexibility: Enables easy addition or removal of components from the build
+     c. Clarity: Keeps build configurations close to the relevant source code
+     d. Hierarchy: Supports a hierarchical build process where the root CMakeLists.txt includes subdirectories
+
+6. Additional Considerations:
+   - The structure allows for easy addition of new components or modules
+   - Separation of public headers (in include/ directories) from implementation files supports clear API boundaries
+   - Test directories mirror the structure of the src/ directory, making it easy to locate tests for specific components
+
+7. Potential Future Enhancements:
+   - Consider adding a docs/ directory for documentation if not already present
+   - If the project grows, consider adding a libs/ or external/ directory for third-party dependencies
+   - As the project evolves, maintain the parallel structure between src/ and tests/ directories
+
+This directory structure provides a clear organization for the project, separating concerns and allowing for modular development and testing. The use of individual CMakeLists.txt files in each directory supports this modularity in the build process, making it easier to manage and extend the project over time.

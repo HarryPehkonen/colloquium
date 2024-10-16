@@ -1,0 +1,109 @@
+Requirements Document: ITranslator Interface
+
+1. Language and Environment:
+   - Implemented in C++
+   - Requires C++11 or later (due to the use of std::unique_ptr and std::vector)
+
+2. Interface Definition:
+   - Defined in header file: src/translator/itranslator.hpp
+   - Pure virtual interface (abstract base class)
+
+3. Virtual Methods:
+   a. messageToJSON:
+      - Purpose: Converts a Message object to its JSON representation
+      - Parameters: const Message& message
+      - Returns: std::string (JSON string)
+      - Pure virtual (= 0)
+
+   b. toolToJSON:
+      - Purpose: Converts a Tool object to its JSON representation
+      - Parameters: const Tool& tool
+      - Returns: std::string (JSON string)
+      - Pure virtual (= 0)
+
+   c. createRequest:
+      - Purpose: Creates a complete JSON request from a vector of messages and tools
+      - Parameters: 
+        - const std::vector<std::unique_ptr<Message>>& messages
+        - const std::vector<Tool>& tools
+      - Returns: std::string (JSON string representing the full request)
+      - Pure virtual (= 0)
+
+4. Destructor:
+   - Virtual destructor (= default)
+   - Ensures proper cleanup of derived classes
+
+5. Usage:
+   - Intended to be subclassed by specific translator implementations (e.g., OpenAITranslator)
+   - Used polymorphically through pointers or references to ITranslator
+
+6. Thread Safety:
+   - The interface itself doesn't guarantee thread safety
+   - Implementations should document their thread safety guarantees
+
+7. Error Handling:
+   - Introduce a TranslationException class for handling translator-specific errors
+   - All methods in ITranslator should be declared noexcept(false) to indicate they may throw exceptions
+   - Implementations should throw TranslationException for any translation-related errors
+
+8. Output Format:
+   - All output methods (messageToJSON, toolToJSON, createRequest) must return std::string containing valid JSON
+   - Add a new method parseJSONToMessage that accepts a std::string containing valid JSON and returns a std::unique_ptr<Message>
+
+9. Statelessness:
+    - All translator methods must be stateless
+    - Any required state should be passed as parameters to the methods
+
+10. Performance Considerations:
+    - Future enhancement: Add support for caching/serializing translated objects to disk
+    - This could be implemented as an optional feature in derived classes
+
+11. Dependencies:
+   - Includes "core/message.hpp" and "core/tool.hpp"
+
+12. Namespace:
+   - Not enclosed in any specific namespace
+
+13. Extensibility:
+    - New methods can be added to the interface as needed for future API requirements
+    - Existing methods should not be modified to maintain backward compatibility
+
+14. Documentation:
+    - Each virtual method should have a clear documentation comment describing its purpose, parameters, and return value
+
+15. Testing:
+    - Concrete implementations of this interface should be thoroughly tested
+    - Consider creating a mock implementation for testing classes that use ITranslator
+
+Here's an example of how the ITranslator interface might look:
+
+```cpp
+// itranslator.hpp
+#pragma once
+#include "core/message.hpp"
+#include "core/tool.hpp"
+#include "translator/translation_exception.hpp"
+#include <memory>
+#include <string>
+#include <vector>
+
+class ITranslator {
+public:
+    virtual ~ITranslator() = default;
+    virtual std::string messageToJSON(const Message& message) const noexcept(false) = 0;
+    virtual std::string toolToJSON(const Tool& tool) const noexcept(false) = 0;
+    virtual std::string createRequest(const std::vector<std::unique_ptr<Message>>& messages,
+                                      const std::vector<Tool>& tools) const noexcept(false) = 0;
+    virtual std::unique_ptr<Message> parseJSONToMessage(const std::string& json) const noexcept(false) = 0;
+};
+
+// translation_exception.hpp
+#pragma once
+#include <stdexcept>
+#include <string>
+
+class TranslationException : public std::runtime_error {
+public:
+    explicit TranslationException(const std::string& message) : std::runtime_error(message) {}
+};
+```

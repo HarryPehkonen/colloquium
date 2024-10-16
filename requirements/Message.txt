@@ -1,0 +1,161 @@
+# Message Class Requirements Document
+
+## 1. Overview
+The Message class represents a single message in a conversation with an AI model. It encapsulates various attributes of a message, including its type, content, and associated metadata.
+
+## 2. Class Definition
+
+### 2.1 File Location
+- Header file: src/core/message.hpp
+- Implementation file: src/core/message.cpp
+
+### 2.2 Class Declaration
+```cpp
+class Message {
+public:
+    enum class Type { System, User, Assistant, ToolCall, ToolResult };
+    
+    Message(Type type);
+    virtual ~Message() = default;
+    
+    Type getType() const;
+    
+    // Public member variables
+    std::string content;
+    std::optional<std::string> created;
+    std::optional<std::string> finish_reason;
+    std::optional<int> prompt_tokens;
+    std::optional<int> completion_tokens;
+    std::optional<int> total_tokens;
+    std::optional<std::string> model;
+    std::optional<double> temperature;
+    std::optional<double> top_p;
+    std::optional<int> max_tokens;
+    std::optional<int> logprobs;
+    std::optional<bool> stream;
+    std::optional<int> random_seed;
+    std::optional<std::string> response_format_type;
+
+protected:
+    Type type_;
+};
+```
+
+## 3. Enumerations
+
+### 3.1 Message Type
+```cpp
+enum class Type { System, User, Assistant, ToolCall, ToolResult };
+```
+- System: Represents system messages or instructions
+- User: Represents user input or queries
+- Assistant: Represents AI model responses
+- ToolCall: Represents a request to use a specific tool
+- ToolResult: Represents the result of a tool operation
+
+## 4. Constructors and Destructor
+
+### 4.1 Constructor
+```cpp
+Message(Type type);
+```
+- Initializes a new Message object with the specified type
+- Sets the `type_` member variable
+
+### 4.2 Destructor
+```cpp
+virtual ~Message() = default;
+```
+- Virtual destructor to allow for proper cleanup in derived classes
+
+## 5. Public Methods
+
+### 5.1 getType
+```cpp
+Type getType() const;
+```
+- Returns the type of the message
+- Should be a const method as it doesn't modify the object
+
+## 6. Member Variables
+
+### 6.1 Required Members
+- `content` (std::string): The main content of the message
+
+### 6.2 Optional Members
+All optional members should use std::optional to indicate their optional nature:
+
+- `created` (std::optional<std::string>): Timestamp of message creation
+- `finish_reason` (std::optional<std::string>): Reason for finishing the response
+- `prompt_tokens` (std::optional<int>): Number of tokens in the prompt
+- `completion_tokens` (std::optional<int>): Number of tokens in the completion
+- `total_tokens` (std::optional<int>): Total number of tokens used
+- `model` (std::optional<std::string>): The model used for this message
+- `temperature` (std::optional<double>): Sampling temperature
+- `top_p` (std::optional<double>): Nucleus sampling parameter
+- `max_tokens` (std::optional<int>): Maximum number of tokens to generate
+- `logprobs` (std::optional<int>): Number of log probabilities to generate
+- `stream` (std::optional<bool>): Whether to stream the response
+- `random_seed` (std::optional<int>): Random seed for deterministic output
+- `response_format_type` (std::optional<std::string>): Desired response format
+
+## 7. Protected Members
+- `type_` (Type): Stores the type of the message
+
+## 8. Functionality Requirements
+
+### 8.1 Type Safety
+- The `Type` enum class should be used to ensure type safety when setting or comparing message types
+
+### 8.2 Immutable Type
+- The message type should be set at construction and should not be modifiable afterwards
+
+### 8.3 Optional Field Handling
+- All optional fields should be easily checkable for the presence of a value
+- Accessing an optional field without a value should throw an exception or have well-defined behavior
+
+### 8.4 Serialization Support
+- While not implemented in the class itself, the Message class should be designed to support easy serialization and deserialization (e.g., to/from JSON)
+
+## 9. Memory Management
+- The class should follow the Rule of Zero or Rule of Five
+- If dynamic memory allocation is needed in derived classes, ensure proper memory management
+
+## 10. Thread Safety
+- The class should be thread-safe for const operations
+- Mutable operations should be clearly documented if they are not thread-safe
+
+## 11. Performance Considerations
+- Consider using move semantics for efficient handling of the content string and other large data members
+- Evaluate the performance impact of using std::optional for all optional fields
+
+## 12. Extensibility
+- The class should be designed to allow easy extension for future message types or additional fields
+- Consider using a version number or similar mechanism to handle potential future changes in the message format
+
+## 13. Error Handling
+- Implement proper error handling for invalid operations (e.g., accessing unset optional fields)
+- Use exceptions or error codes as appropriate for the project's error handling strategy
+
+## 14. Testing Requirements
+- Unit tests should cover:
+  - Construction with different types
+  - Getting and setting all fields
+  - Proper handling of optional fields
+  - Any complex logic in derived classes
+- Consider property-based testing for fields with constraints (e.g., temperature range)
+
+## 15. Documentation
+- All public methods and member variables should have clear, concise documentation
+- Include usage examples in the class documentation
+- Document any assumptions or constraints on the values of fields
+
+## 16. Compliance
+- Ensure the class adheres to any relevant coding standards or guidelines used in the project
+- Consider any data protection or privacy implications of storing message content
+
+## 17. Internationalization
+- If applicable, ensure the class can handle content in various languages and character sets
+
+## 18. Future Considerations
+- Plan for potential future requirements such as message encryption, compression, or additional metadata fields

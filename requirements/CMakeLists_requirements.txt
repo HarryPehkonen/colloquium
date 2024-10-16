@@ -1,0 +1,203 @@
+Requirements Document: CMakeLists.txt Structure and Configuration
+
+1. Overview:
+   The project uses CMake as its build system, with a hierarchical structure of CMakeLists.txt files. Each directory contains its own CMakeLists.txt file, responsible for building the components within that directory and including relevant subdirectories.
+
+2. Global Considerations:
+   - Minimum CMake version: 3.10
+   - All external dependencies (e.g., JSON, cURL) are assumed to be installed system-wide
+   - No automatic fetching of dependencies is performed
+   - C++17 is used as the standard throughout the project
+
+3. Root CMakeLists.txt:
+   Location: ./CMakeLists.txt
+   Contents:
+   - Sets the project name and version
+   - Sets the C++ standard to C++17
+   - Includes the src/ and tests/ directories
+   - Finds required packages: GTest, CURL
+   - Sets global compile options (e.g., warnings)
+
+   Example:
+   ```cmake
+   cmake_minimum_required(VERSION 3.10)
+   project(LLMClient VERSION 1.0)
+
+   set(CMAKE_CXX_STANDARD 17)
+   set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+   find_package(GTest REQUIRED)
+   find_package(CURL REQUIRED)
+
+   add_subdirectory(src)
+   add_subdirectory(tests)
+
+   # Global compile options
+   add_compile_options(-Wall -Wextra -Wpedantic)
+   ```
+
+4. src/ CMakeLists.txt:
+   Location: ./src/CMakeLists.txt
+   Contents:
+   - Includes subdirectories: core, http_client, translator, client
+   
+   Example:
+   ```cmake
+   add_subdirectory(core)
+   add_subdirectory(http_client)
+   add_subdirectory(translator)
+   add_subdirectory(client)
+   ```
+
+5. src/core/ CMakeLists.txt:
+   Location: ./src/core/CMakeLists.txt
+   Contents:
+   - Defines the core library
+   - Specifies source files
+   - Sets include directories
+
+   Example:
+   ```cmake
+   add_library(core
+       message.cpp
+       parameter.cpp
+       tool.cpp
+   )
+
+   target_include_directories(core
+       PUBLIC
+           ${CMAKE_CURRENT_SOURCE_DIR}
+   )
+
+   set_target_properties(core PROPERTIES
+       VERSION ${PROJECT_VERSION}
+       SOVERSION ${PROJECT_VERSION_MAJOR}
+   )
+   ```
+
+6. src/http_client/ CMakeLists.txt:
+   Location: ./src/http_client/CMakeLists.txt
+   Contents:
+   - Defines the http_client library
+   - Links against system-wide cURL library
+   - Sets include directories
+
+   Example:
+   ```cmake
+   add_library(http_client
+       src/curl_http_client.cpp
+   )
+
+   target_include_directories(http_client
+       PUBLIC
+           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+           $<INSTALL_INTERFACE:include>
+       PRIVATE
+           ${CMAKE_CURRENT_SOURCE_DIR}/src
+   )
+
+   target_link_libraries(http_client PRIVATE CURL::libcurl)
+
+   set_target_properties(http_client PROPERTIES
+       VERSION ${PROJECT_VERSION}
+       SOVERSION ${PROJECT_VERSION_MAJOR}
+   )
+   ```
+
+7. src/translator/ CMakeLists.txt:
+   Location: ./src/translator/CMakeLists.txt
+   Contents:
+   - Defines the translator library
+   - Links against system-wide JSON library
+   - Sets include directories
+
+   Example:
+   ```cmake
+   add_library(translator
+       openai_translator.cpp
+   )
+
+   target_include_directories(translator
+       PUBLIC
+           ${CMAKE_CURRENT_SOURCE_DIR}
+           ${CMAKE_SOURCE_DIR}/src
+   )
+
+   target_link_libraries(translator
+       PRIVATE
+           core
+           nlohmann_json::nlohmann_json
+   )
+
+   set_target_properties(translator PROPERTIES
+       VERSION ${PROJECT_VERSION}
+       SOVERSION ${PROJECT_VERSION_MAJOR}
+   )
+   ```
+
+8. src/client/ CMakeLists.txt:
+   Location: ./src/client/CMakeLists.txt
+   Contents:
+   - Defines the llm_client library
+   - Links against other project libraries
+   - Sets include directories
+
+   Example:
+   ```cmake
+   add_library(llm_client
+       llm_client.cpp
+   )
+
+   target_include_directories(llm_client
+       PUBLIC
+           ${CMAKE_CURRENT_SOURCE_DIR}
+           ${CMAKE_SOURCE_DIR}/src
+   )
+
+   target_link_libraries(llm_client
+       PRIVATE
+           core
+           translator
+           http_client
+   )
+
+   set_target_properties(llm_client PROPERTIES
+       VERSION ${PROJECT_VERSION}
+       SOVERSION ${PROJECT_VERSION_MAJOR}
+   )
+   ```
+
+9. tests/ CMakeLists.txt:
+   Location: ./tests/CMakeLists.txt
+   Contents:
+   - Includes test subdirectories
+   - Sets up test discovery
+
+   Example:
+   ```cmake
+   include(GoogleTest)
+
+   add_subdirectory(core)
+   add_subdirectory(http_client)
+   add_subdirectory(llm_client)
+
+   enable_testing()
+   ```
+
+10. Additional Considerations:
+    - Each CMakeLists.txt file is responsible for its own directory contents
+    - Dependencies are not automatically fetched; they must be installed system-wide
+    - The build system supports both Debug and Release configurations
+    - Installation rules should be defined in the root CMakeLists.txt file
+
+11. Best Practices:
+    - Use target_link_libraries() with PRIVATE, PUBLIC, or INTERFACE specifiers
+    - Use generator expressions for build-interface vs. install-interface includes
+    - Set project-wide properties and options in the root CMakeLists.txt
+    - Use find_package() for system-wide installed libraries
+    - Avoid hardcoding paths; use CMake variables like CMAKE_CURRENT_SOURCE_DIR
+
+12. Testing:
+    - Use GoogleTest for unit testing
+    - Each test directory should have its own CMakeLists.txt file
+    - Use gtest_discover_tests() for automatic test discovery

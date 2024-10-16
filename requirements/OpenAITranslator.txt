@@ -1,0 +1,75 @@
+# OpenAITranslator Requirements Document
+
+## 1. Overview
+The OpenAITranslator class is responsible for translating internal data structures to JSON format compatible with the OpenAI API. It implements the ITranslator interface.
+
+## 2. Class Definition
+- Inherits from: ITranslator
+- Header file: openai_translator.hpp
+- Implementation file: openai_translator.cpp
+
+## 3. Dependencies
+- nlohmann/json library for JSON manipulation
+- Core data structures: Message, Tool, Parameter
+
+## 4. Public Methods
+4.1 messageToJSON
+- Input: const Message& message
+- Output: std::string (JSON representation)
+- Purpose: Convert a Message object to JSON string
+
+4.2 toolToJSON
+- Input: const Tool& tool
+- Output: std::string (JSON representation)
+- Purpose: Convert a Tool object to JSON string
+
+4.3 createRequest
+- Input: 
+  - const std::vector<std::unique_ptr<Message>>& messages
+  - const std::vector<Tool>& tools
+- Output: std::string (JSON representation of the complete request)
+- Purpose: Create a full request JSON string from messages and tools
+
+## 5. Private Methods
+5.1 messageToJSONObject
+- Input: const Message& message
+- Output: nlohmann::json
+- Purpose: Convert a Message object to a JSON object
+
+5.2 toolToJSONObject
+- Input: const Tool& tool
+- Output: nlohmann::json
+- Purpose: Convert a Tool object to a JSON object
+
+5.3 parameterToJSONObject
+- Input: const Parameter& param
+- Output: nlohmann::json
+- Purpose: Convert a Parameter object to a JSON object
+
+## 6. Functionality Requirements
+6.1 Message Translation
+- Convert Message type to appropriate role string
+- Include all relevant fields from the Message object
+- Handle optional fields appropriately
+
+6.2 Tool Translation
+- Convert Tool to function-calling format
+- Include name, description, and parameters
+- Handle required parameters
+
+6.3 Request Creation
+- Combine messages and tools into a single request
+- Include model and other relevant parameters from the user message
+- Ensure compatibility with OpenAI API format
+
+## 7. Error Handling
+- Throw appropriate exceptions for invalid inputs or conversion errors
+
+## 8. Performance Considerations
+- Efficient JSON manipulation using nlohmann/json library
+- Avoid unnecessary copying of large data structures
+
+## 9. Testing Requirements
+- Unit tests for each public method
+- Test various combinations of optional fields
+- Ensure correct handling of edge cases (empty messages, tools without parameters, etc.)

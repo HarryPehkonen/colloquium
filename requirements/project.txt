@@ -1,0 +1,98 @@
+# Project Overview and Requirements
+
+## 1. Project Goal
+The project is a client library for interacting with Large Language Models (LLMs), specifically tailored for OpenAI's API but absolutely extensible to other LLM providers.
+
+## 2. Core Components
+
+### 2.1 LLM Client
+- Manages the overall interaction with the LLM service
+- Handles message history and tool management
+- Interfaces with the Translator and HTTP Client
+
+### 2.2 Translator
+- Converts internal data structures to API-specific formats
+- Currently implements OpenAI's API requirements
+- Extensible for potential future API integrations
+
+### 2.3 HTTP Client
+- Provides asynchronous HTTP operations
+- Supports various HTTP methods (GET, POST, PUT, PATCH, DELETE)
+- Handles request/response cycle
+
+### 2.4 Core Data Structures
+- Message: Represents various types of messages in the conversation
+- Tool: Represents function-calling capabilities
+- Parameter: Defines parameters for tools
+
+## 3. Key Requirements
+
+### 3.1 Flexibility
+- Support for different types of messages (system, user, assistant, tool calls, tool results)
+- Extensible design to accommodate future LLM features
+
+### 3.2 API Compatibility
+- Accurate translation of internal structures to OpenAI API format
+- Support for all relevant OpenAI API parameters
+
+### 3.3 Asynchronous Operations
+- Non-blocking HTTP requests
+- Ability to handle streaming responses
+
+### 3.4 Error Handling
+- Robust error handling across all components
+- Meaningful error messages and exceptions
+
+### 3.5 Thread Safety
+- Thread-safe design for concurrent operations
+
+### 3.6 Performance
+- Efficient handling of large messages and responses
+- Optimized JSON parsing and generation
+
+### 3.7 Testability
+- Comprehensive unit testing for all components
+- Mocking of HTTP responses for testing
+
+## 4. Non-Functional Requirements
+
+### 4.1 Usability
+- Simple and intuitive API for end-users of the library
+- Clear documentation and usage examples
+
+### 4.2 Maintainability
+- Well-structured code with clear separation of concerns
+- Use of modern C++ features and best practices
+
+### 4.3 Portability
+- Cross-platform compatibility (implied by use of CMake and standard C++)
+
+### 4.4 Security
+- Secure handling of API keys and sensitive data
+- Proper error handling to prevent information leakage
+
+## 5. Future Considerations
+
+### 5.1 Multi-Provider Support
+- Potential extension to support other LLM providers beyond OpenAI
+
+### 5.2 Advanced Features
+- Support for more complex conversation flows
+- Integration with local LLM models
+
+### 5.3 Performance Optimization
+- Potential for response streaming and incremental processing
+- Caching mechanisms for improved efficiency
+
+## 6. Build and Deployment
+
+### 6.1 Build System
+- Use of CMake for cross-platform build configuration
+
+### 6.2 Dependency Management
+- Clear specification of external dependencies (e.g., nlohmann/json, CURL)
+
+### 6.3 Continuous Integration
+- Implied requirement for CI/CD pipeline (based on comprehensive test suite)
+
+This overview provides a high-level understanding of the project's requirements and structure. The actual implementation may vary or include additional features not apparent from the provided source files.
