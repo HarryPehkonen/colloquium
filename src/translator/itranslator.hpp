@@ -13,5 +13,5 @@ public:
     virtual std::string toolToJSON(const Tool& tool) const noexcept(false) = 0;
     virtual std::string createRequest(const std::vector<std::unique_ptr<Message>>& messages,
                                       const std::vector<Tool>& tools) const noexcept(false) = 0;
-    virtual std::unique_ptr<Message> parseJSONToMessage(const std::string& json) const noexcept(false) = 0;
+    virtual std::unique_ptr<Message> responseToMessage(const std::string& json) const noexcept(false) = 0;
 };

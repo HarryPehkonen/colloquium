@@ -2,6 +2,9 @@
 #include "http_client/http_client_exception.hpp"
 #include <sstream>
 #include <thread>
+#include <iostream>
+#include <iterator>
+#include <algorithm>
 
 namespace http_client {
 
@@ -27,6 +30,12 @@ std::future<HTTPResponse> CurlHTTPClient::Put(const std::string& uri, const std:
 }
 
 std::future<HTTPResponse> CurlHTTPClient::Post(const std::string& uri, const std::string& body, const std::vector<std::string>& headers) {
+    std::cout << "CurlHTTPClient::POST" << std::endl;
+    for (const auto& header : headers) {
+        std::cout << "\t" << header << "\n";
+    };
+    std::cout << "Body: " << body;
+    std::cout << std::endl;
     return PerformRequest("POST", uri, body, headers);
 }
 

@@ -10,14 +10,14 @@ protected:
 TEST_F(OpenAITranslatorTest, MessageToJSON) {
     Message message(Message::Type::User);
     message.content = "Hello, AI!";
-    message.created = "2023-05-01T12:00:00Z";
+    message.created = 1729376080;
 
     std::string json = translator.messageToJSON(message);
     auto parsed = nlohmann::json::parse(json);
 
     EXPECT_EQ(parsed["role"], "user");
     EXPECT_EQ(parsed["content"], "Hello, AI!");
-    EXPECT_EQ(parsed["created"], "2023-05-01T12:00:00Z");
+    EXPECT_EQ(parsed["created"], 1729376080);
 }
 
 TEST_F(OpenAITranslatorTest, ToolToJSON) {

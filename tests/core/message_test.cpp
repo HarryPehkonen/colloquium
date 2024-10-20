@@ -21,13 +21,13 @@ TEST(MessageTest, ConstructorAndGetType) {
 TEST(MessageTest, ContentAndOptionalFields) {
     Message message(Message::Type::User);
     message.content = "Hello, World!";
-    message.created = "2023-05-01T12:00:00Z";
+    message.created = 1729376080;
     message.model = "gpt-3.5-turbo";
     message.temperature = 0.7;
     message.max_tokens = 100;
 
     EXPECT_EQ(message.content, "Hello, World!");
-    EXPECT_EQ(message.created.value(), "2023-05-01T12:00:00Z");
+    EXPECT_EQ(message.created, 1729376080);
     EXPECT_EQ(message.model.value(), "gpt-3.5-turbo");
     EXPECT_DOUBLE_EQ(message.temperature.value(), 0.7);
     EXPECT_EQ(message.max_tokens.value(), 100);
