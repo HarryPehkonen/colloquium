@@ -1,6 +1,6 @@
 #include "translator/openai_translator.hpp"
-#include "http_client/include/http_client/ihttp_client.hpp"
-#include "http_client/src/curl_http_client.hpp"
+#include "http_client/ihttp_client.hpp"
+#include "http_client/curl_http_client.hpp"
 #include "exceptions/llm_exceptions.hpp"
 #include "core/message.hpp"
 #include "core/tool.hpp"

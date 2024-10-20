@@ -1,4 +1,4 @@
-#include "curl_http_client.hpp"
+#include "http_client/curl_http_client.hpp"
 #include "exceptions/llm_exceptions.hpp"
 #include <sstream>
 #include <thread>

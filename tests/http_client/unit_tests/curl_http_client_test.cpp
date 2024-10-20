@@ -2,7 +2,7 @@
 #include <gmock/gmock.h>
 #include "http_client/ihttp_client.hpp"
 #include "exceptions/llm_exceptions.hpp"
-#include "../../../src/http_client/src/curl_http_client.hpp"
+#include "http_client/curl_http_client.hpp"
 #include <chrono>
 
 using namespace http_client;

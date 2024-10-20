@@ -18,6 +18,7 @@ Message::Type Message::getType() const {
 }
 
 std::string Message::to_string() {
+
     return std::string("") +
         "Type: " + [this]() {
             switch (type_) {

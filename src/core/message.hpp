@@ -8,14 +8,14 @@
 class Message {
 public:
     enum class Type { System, User, Assistant, ToolCall, ToolResult };
-    
+
     Message(Type type);
     virtual ~Message() = default;
-    
+
     Type getType() const;
 
     std::string to_string();
-    
+
     std::string content;
     long long created;
     std::optional<std::string> finish_reason;
