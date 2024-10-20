@@ -17,7 +17,7 @@ TEST_F(OpenAITranslatorTest, MessageToJSON) {
 
     EXPECT_EQ(parsed["role"], "user");
     EXPECT_EQ(parsed["content"], "Hello, AI!");
-    EXPECT_EQ(parsed["created"], 1729376080);
+    EXPECT_EQ(parsed.contains("created"), false);
 }
 
 TEST_F(OpenAITranslatorTest, ToolToJSON) {
