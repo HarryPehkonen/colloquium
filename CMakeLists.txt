@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
+
+set(CMAKE_CXX_COMPILER clang++)
+set(CMAKE_C_COMPILER clang)
+
 project(LLMClientProject VERSION 1.0)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -15,6 +19,9 @@ find_package(nlohmann_json 3.2.0 REQUIRED)
 
 # Include FetchContent module
 include(FetchContent)
+
+# Ability to include from anywhere
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # Fetch spdlog
 FetchContent_Declare(

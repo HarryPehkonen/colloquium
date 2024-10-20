@@ -51,7 +51,7 @@ std::string OpenAITranslator::createRequest(
         [](const auto& msg) { return msg->getType() == Message::Type::User; });
 
     if (lastUserMessageIterator == messages.rend()) {
-        throw std::runtime_error("No user message found in conversation");
+        throw llm::TranslationException("No user message found in conversation");
     }
     
     const Message* messageWithSpecs = lastUserMessageIterator->get();
@@ -127,43 +127,48 @@ std::string OpenAITranslator::createRequest(
 */
 
 std::unique_ptr<Message> OpenAITranslator::responseToMessage(const std::string& json) const {
-    nlohmann::json j = nlohmann::json::parse(json);
-    std::string role = j["choices"][0]["message"]["role"];
-    std::unique_ptr<Message> message = role == "assistant"
-        ? std::make_unique<Message>(Message::Type::Assistant)
-        : std::make_unique<Message>(Message::Type::System)
-    ;
-    message->content = j["choices"][0]["message"]["content"];
-    message->created = j["created"];
-    message->finish_reason = j["choices"][0]["finish_reason"];
-    message->model = j["model"];
-    message->prompt_tokens = j["usage"]["prompt_tokens"];
-    message->completion_tokens = j["usage"]["completion_tokens"];
-    message->total_tokens = j["usage"]["total_tokens"];
+    try {
+        nlohmann::json j = nlohmann::json::parse(json);
+        std::string role = j["choices"][0]["message"]["role"];
+        std::unique_ptr<Message> message = role == "assistant"
+            ? std::make_unique<Message>(Message::Type::Assistant)
+            : std::make_unique<Message>(Message::Type::System)
+        ;
+        message->content = j["choices"][0]["message"]["content"];
+        message->created = j["created"];
+        message->finish_reason = j["choices"][0]["finish_reason"];
+        message->model = j["model"];
+        message->prompt_tokens = j["usage"]["prompt_tokens"];
+        message->completion_tokens = j["usage"]["completion_tokens"];
+        message->total_tokens = j["usage"]["total_tokens"];
 
-    // tool calls?
-    if (j["choices"][0]["message"]["tool_calls"].size() > 0) {
-        for (const auto& toolCall : j["choices"][0]["message"]["tool_calls"]) {
-            std::map<std::string, std::string> toolCallMap;
-            toolCallMap["id"] = toolCall["id"];
-            toolCallMap["name"] = toolCall["function"]["name"];
-            toolCallMap["arguments"] = toolCall["function"]["arguments"];
-            message->tool_calls.push_back(toolCallMap);
+        // tool calls?
+        if (j["choices"][0]["message"]["tool_calls"].size() > 0) {
+            for (const auto& toolCall : j["choices"][0]["message"]["tool_calls"]) {
+                std::map<std::string, std::string> toolCallMap;
+                toolCallMap["id"] = toolCall["id"];
+                toolCallMap["name"] = toolCall["function"]["name"];
+                toolCallMap["arguments"] = toolCall["function"]["arguments"];
+                message->tool_calls.push_back(toolCallMap);
+            }
         }
-    }
 
-    return std::move(message);
+        return std::move(message);
+
+    } catch (const nlohmann::json::exception& e) {
+        throw llm::TranslationException(e.what());
+    }
 }
 
-std::string OpenAITranslator::messageToJSON(const Message& message) const {
+std::string OpenAITranslator::toJSON(const Message& message) const {
     return messageToJSONObject(message).dump();
 }
 
-std::string OpenAITranslator::toolToJSON(const Tool& tool) const {
+std::string OpenAITranslator::toJSON(const Tool& tool) const {
     return toolToJSONObject(tool).dump();
 }
 
-std::string OpenAITranslator::parameterToJSON(const Parameter& param) const {
+std::string OpenAITranslator::toJSON(const Parameter& param) const {
     return parameterToJSONObject(param).dump();
 }
 
@@ -212,7 +217,7 @@ nlohmann::json OpenAITranslator::messageToJSONObject(const Message& message) con
             case Message::Type::ToolCall: return "tool_call";
             // case Message::Type::ToolResult: return "function";
             case Message::Type::ToolResult: return "tool";
-            default: throw std::runtime_error("Unknown message type");
+            default: throw llm::TranslationException("Unknown message type");
         }
     }();
     j["content"] = message.content;

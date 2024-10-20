@@ -1,5 +1,5 @@
 #include "curl_http_client.hpp"
-#include "http_client/http_client_exception.hpp"
+#include "exceptions/llm_exceptions.hpp"
 #include <sstream>
 #include <thread>
 #include <iostream>
@@ -11,7 +11,7 @@ namespace http_client {
 CurlHTTPClient::CurlHTTPClient() : m_timeout(30000) {
     m_curl = curl_easy_init();
     if (!m_curl) {
-        throw HTTPClientException("Failed to initialize libcurl");
+        throw llm::HTTPException("Failed to initialize libcurl");
     }
 }
 
@@ -89,7 +89,7 @@ std::future<HTTPResponse> CurlHTTPClient::PerformRequest(const std::string& meth
         }
 
         if (res != CURLE_OK) {
-            throw HTTPClientException(curl_easy_strerror(res));
+            throw llm::HTTPException(curl_easy_strerror(res));
         }
 
         long status_code;

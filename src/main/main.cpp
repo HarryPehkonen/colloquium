@@ -1,7 +1,7 @@
 #include "translator/openai_translator.hpp"
 #include "http_client/include/http_client/ihttp_client.hpp"
 #include "http_client/src/curl_http_client.hpp"
-#include "http_client/include/http_client/http_client_exception.hpp"
+#include "exceptions/llm_exceptions.hpp"
 #include "core/message.hpp"
 #include "core/tool.hpp"
 
@@ -25,14 +25,24 @@ std::string vectorToString(const std::vector<std::string>& vec, const std::strin
         });
 }
 
-std::string theTool(std::string paramsJson) {
+std::string theWeatherToolCallback(std::string paramsJson) {
     std::cout << "The tool is being called" << std::endl;
     nlohmann::json params = nlohmann::json::parse(paramsJson);
-    // return "The weather in " + params["location"].get<std::string>() + " is sunny.";
-    return "Sunny";
+    return "Sunny and 75 degrees fahrenheit";
+}
+
+std::string fahrenheitToCelsius(std::string paramsJson) {
+    nlohmann::json params = nlohmann::json::parse(paramsJson);
+    if (params.find("fahrenheit") == params.end()) {
+        return "Missing fahrenheit parameter";
+    }
+    double fahrenheit = params["fahrenheit"];
+    double celsius = (fahrenheit - 32) * 5 / 9;
+    return std::to_string(celsius);
 }
 
 int main(int argc, char* argv[]) {
+
     // Set up logging
     auto console = spdlog::stdout_color_mt("console");
     spdlog::set_default_logger(console);
@@ -103,16 +113,11 @@ int main(int argc, char* argv[]) {
         const char* apiKey = std::getenv(apiKeyName.c_str());
         if (apiKey == nullptr) {
             spdlog::error(apiKeyName + " environment variable not set");
-            throw std::runtime_error(apiKeyName + " environment variable not set");
+            throw llm::LLMException(apiKeyName + " environment variable not set");
         }
 
-        spdlog::info("Creating HTTP client");
         auto httpClient = std::make_unique<http_client::CurlHTTPClient>();
-
-        spdlog::info("Creating translator");
         auto translator = std::make_unique<OpenAITranslator>();
-
-        spdlog::info("Creating the conversation");
         std::vector<std::unique_ptr<Message>> conversation;
 
         auto systemMessage = std::make_unique<Message>(Message::Type::System);
@@ -120,7 +125,7 @@ int main(int argc, char* argv[]) {
         conversation.push_back(std::move(systemMessage));
 
         auto userMessage = std::make_unique<Message>(Message::Type::User);
-        userMessage->content = "What's the weather like today?  I'm in Vancouver, BC, Canada.";
+        userMessage->content = "What's the weather like today?  I'm in Vancouver, BC, Canada.  I like it in Celsius.";
         userMessage->model = modelName;
 
         // not for venice.ai
@@ -131,7 +136,7 @@ int main(int argc, char* argv[]) {
         Tool weatherTool;
         weatherTool.name = "get_weather";
         weatherTool.description = "Get the current weather for a location";
-        weatherTool.function = theTool;
+        weatherTool.function = theWeatherToolCallback;
 
         Parameter locationParam;
         locationParam.name = "location";
@@ -141,7 +146,20 @@ int main(int argc, char* argv[]) {
 
         weatherTool.parameters.push_back(locationParam);
 
-        std::vector<Tool> tools = {weatherTool};
+        Tool fahrenheitToCelsiusTool;
+        fahrenheitToCelsiusTool.name = "fahrenheit_to_celsius";
+        fahrenheitToCelsiusTool.description = "Converts a temperature in Fahrenheit to Celsius";
+        fahrenheitToCelsiusTool.function = fahrenheitToCelsius;
+
+        Parameter fahrenheitParam;
+        fahrenheitParam.name = "fahrenheit";
+        fahrenheitParam.type = "number";
+        fahrenheitParam.description = "The temperature in Fahrenheit";
+        fahrenheitParam.required = true;
+
+        fahrenheitToCelsiusTool.parameters.push_back(fahrenheitParam);
+
+        std::vector<Tool> tools = {weatherTool, fahrenheitToCelsiusTool};
 
         do {
             spdlog::info("Creating request using the translator");
@@ -256,11 +274,18 @@ int main(int argc, char* argv[]) {
                 }
             }
         } while (true);
-    } catch (const http_client::HTTPClientException& e) {
-        spdlog::error("HTTP Client error: {}", e.what());
+    } catch (const llm::HTTPException& e) {
+        std::cerr << "HTTP Error: " << e.what() << std::endl;
+        return 1;
+    } catch (const llm::TranslationException& e) {
+        std::cerr << "Translation Error: " << e.what() << std::endl;
+        return 1;
+    } catch (const llm::LLMException& e) {
+        std::cerr << "LLM Error: " << e.what() << std::endl;
+        return 1;
     } catch (const std::exception& e) {
-        spdlog::error("Error: {}", e.what());
+        std::cerr << "Unexpected error: " << e.what() << std::endl;
+        return 1;
     }
-
     return 0;
 }

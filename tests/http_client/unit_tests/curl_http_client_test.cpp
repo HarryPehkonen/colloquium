@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "http_client/ihttp_client.hpp"
-#include "http_client/http_client_exception.hpp"
+#include "exceptions/llm_exceptions.hpp"
 #include "../../../src/http_client/src/curl_http_client.hpp"
 #include <chrono>
 
@@ -54,5 +54,5 @@ TEST_F(CurlHTTPClientTest, RequestToNonexistentUrlThrowsException) {
     EXPECT_THROW({
         auto future = client->Get("http://thisurldoesnotexist.test");
         future.get();
-    }, HTTPClientException);
+    }, llm::HTTPException);
 }

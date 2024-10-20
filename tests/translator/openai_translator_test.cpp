@@ -12,7 +12,7 @@ TEST_F(OpenAITranslatorTest, MessageToJSON) {
     message.content = "Hello, AI!";
     message.created = 1729376080;
 
-    std::string json = translator.messageToJSON(message);
+    std::string json = translator.toJSON(message);
     auto parsed = nlohmann::json::parse(json);
 
     EXPECT_EQ(parsed["role"], "user");
@@ -44,7 +44,7 @@ TEST_F(OpenAITranslatorTest, ToolToJSON) {
 
     tool.parameters = {num1, num2, operation};
 
-    std::string json = translator.toolToJSON(tool);
+    std::string json = translator.toJSON(tool);
     auto parsed = nlohmann::json::parse(json);
 
     EXPECT_EQ(parsed["type"], "function");
