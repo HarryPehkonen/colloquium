@@ -41,20 +41,7 @@ std::string fahrenheitToCelsius(std::string paramsJson) {
     return std::to_string(celsius);
 }
 
-int main(int argc, char* argv[]) {
-
-    // Set up logging
-    auto console = spdlog::stdout_color_mt("console");
-    spdlog::set_default_logger(console);
-
-    // Set log level based on command line argument
-    if (argc > 1 && std::string(argv[1]) == "--debug") {
-        spdlog::set_level(spdlog::level::debug);
-        spdlog::debug("Debug logging enabled");
-    } else {
-        spdlog::set_level(spdlog::level::info);
-    }
-
+void run() {
     try {
 
         // const std::string chatUri = "https://api.venice.ai/api/v1/chat/completions";
@@ -125,7 +112,7 @@ int main(int argc, char* argv[]) {
         conversation.push_back(std::move(systemMessage));
 
         auto userMessage = std::make_unique<Message>(Message::Type::User);
-        userMessage->content = "What's the weather like today?  I'm in Vancouver, BC, Canada.  I like it in Celsius.";
+        userMessage->content = "What's the weather like today?  I'm in Vancouver, BC, Canada.  Please make sure it's in Celsius.";
         userMessage->model = modelName;
 
         // not for venice.ai
@@ -162,73 +149,50 @@ int main(int argc, char* argv[]) {
         std::vector<Tool> tools = {weatherTool, fahrenheitToCelsiusTool};
 
         do {
-            spdlog::info("Creating request using the translator");
             std::string requestBody = translator->createRequest(conversation, tools);
-            spdlog::debug("Request body: {}", requestBody);
-
-            spdlog::info("Setting up headers");
             std::string authHeader = "Authorization: Bearer " + std::string(apiKey);
             std::vector<std::string> headers = {
                 "Content-Type: application/json",
                 "Accept: application/json",
                 authHeader
             };
-            spdlog::debug("Headers: {}", vectorToString(headers, "\n"));
 
-            spdlog::info("Sending request asynchronously");
             std::future<http_client::HTTPResponse> responseFuture = 
                 httpClient->Post(chatUri, requestBody, headers);
 
-            spdlog::info("Waiting for the response");
             http_client::HTTPResponse response = responseFuture.get();
 
             if (response.statusCode != 200) {
-                spdlog::error("Received error status code: {}", response.statusCode);
-                spdlog::error("Response body: {}", response.body);
-                return 1;
+                std::cerr << "Received error status code: " << response.statusCode << std::endl;
+                std::cerr << "Response body:\n" << response.body << std::endl;
+                return;
             }
-            spdlog::info("Received successful response");
-            spdlog::debug("Response body: {}", response.body);
 
             auto responseMessage = translator->responseToMessage(response.body);
             if (!responseMessage) {
-                spdlog::error("Failed to parse the response.");
-                return 1;
+                std::cerr << "Failed to parse the response." << std::endl;
+                return;
             }
             // make a copy for the conversation
             auto responseMessageCopy = std::make_unique<Message>(*responseMessage);
             conversation.push_back(std::move(responseMessageCopy));
 
-            std::cout << "************************************************************************" << std::endl;
-            for (const auto& message : conversation) {
-                std::cout << "Message:\n" << message->to_string() << std::endl;
-            }
-
             if (responseMessage->tool_calls.size() == 0) {
-                std::cout << "Done!" << std::endl;
+                std::cout << responseMessage->content << std::endl;
                 break;
             }
             for (const std::map<std::string, std::string>& tool_call : responseMessage->tool_calls) {
-                std::cout << "Tool Call: " << std::endl;
-
-                // print out all fields for the tool call from the
-                // request
-                for (const auto& [key, value] : tool_call) {
-                    std::cout << "\t" << key << ": " << value << std::endl;
-                }
 
                 // which tool name is being called?
                 auto toolNameIt = tool_call.find("name");
                 if (toolNameIt == tool_call.end()) {
-                    spdlog::error("Tool call does not have a name");
-                    continue;
+                    throw llm::LLMException("Tool call does not have a name");
                 }
                 std::string toolName = toolNameIt->second;
-                std::cout << "we are looking for " << toolName << std::endl;
 
                 auto toolCallIdIt = tool_call.find("id");
                 if (toolCallIdIt == tool_call.end()) {
-                    spdlog::error("Tool call does not have an id");
+                    throw llm::LLMException("Tool call does not have an id");
                 }
                 std::string toolCallId = toolCallIdIt->second;
 
@@ -237,8 +201,7 @@ int main(int argc, char* argv[]) {
                     [&toolName](const Tool& tool) { return tool.name == toolName; }
                 ); 
                 if (toolIt == tools.end()) {
-                    spdlog::error("Didn't find the tool");
-                    continue;
+                    throw llm::LLMException("Didn't find the tool");
                 }
                 Tool tool = *toolIt;
 
@@ -258,34 +221,38 @@ int main(int argc, char* argv[]) {
                 toolResultMessage->name = toolName;
                 toolResultMessage->tool_call_id = toolCallId;
 
-                // segfault:
-                // toolResultMessage->model = userMessage->model;
                 toolResultMessage->model = modelName;
 
 
                 // add the tool result message to the conversation
                 conversation.push_back(std::move(toolResultMessage));
-
-                // print out the conversation so far
-                std::cout << "************************************************************************" << std::endl;
-                std::cout << "should we go again?" << std::endl;
-                for (const auto& message : conversation) {
-                    std::cout << "Message:\n" << message->to_string() << std::endl;
-                }
             }
         } while (true);
     } catch (const llm::HTTPException& e) {
         std::cerr << "HTTP Error: " << e.what() << std::endl;
-        return 1;
     } catch (const llm::TranslationException& e) {
         std::cerr << "Translation Error: " << e.what() << std::endl;
-        return 1;
     } catch (const llm::LLMException& e) {
         std::cerr << "LLM Error: " << e.what() << std::endl;
-        return 1;
     } catch (const std::exception& e) {
         std::cerr << "Unexpected error: " << e.what() << std::endl;
-        return 1;
     }
+}
+
+int main(int argc, char* argv[]) {
+
+    // Set up logging
+    auto console = spdlog::stdout_color_mt("console");
+    spdlog::set_default_logger(console);
+
+    // Set log level based on command line argument
+    if (argc > 1 && std::string(argv[1]) == "--debug") {
+        spdlog::set_level(spdlog::level::debug);
+        spdlog::debug("Debug logging enabled");
+    } else {
+        spdlog::set_level(spdlog::level::info);
+    }
+
+    run();
     return 0;
 }
