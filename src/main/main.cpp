@@ -8,6 +8,8 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
+#include <async_deque/async_deque.hpp>
+
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -41,7 +43,7 @@ std::string fahrenheitToCelsius(std::string paramsJson) {
     return std::to_string(celsius);
 }
 
-void run() {
+void run(async_deque::AsyncDeque<std::unique_ptr<Message>>& deque) {
     try {
 
         // const std::string chatUri = "https://api.venice.ai/api/v1/chat/completions";
@@ -111,14 +113,6 @@ void run() {
         systemMessage->content = R"(You are a helpful assistant.  If you are asked for the weather, please use the "get_weather" tool to get the current weather for any given location.)";
         conversation.push_back(std::move(systemMessage));
 
-        auto userMessage = std::make_unique<Message>(Message::Type::User);
-        userMessage->content = "What's the weather like today?  I'm in Vancouver, BC, Canada.  Please make sure it's in Celsius.";
-        userMessage->model = modelName;
-
-        // not for venice.ai
-        // userMessage->tool_choice = "required";
-        conversation.push_back(std::move(userMessage));
-
         spdlog::info("Creating weather tool");
         Tool weatherTool;
         weatherTool.name = "get_weather";
@@ -149,6 +143,19 @@ void run() {
         std::vector<Tool> tools = {weatherTool, fahrenheitToCelsiusTool};
 
         do {
+            if (deque.empty()) {
+                std::cerr << "Deque is empty." << std::endl;
+                break;
+            }
+
+            std::cerr << "Looping..." << std::endl;
+            auto optionalMessage = deque.pop_front();
+            if (!optionalMessage) {
+                break;
+            }
+            (*optionalMessage)->model = modelName;
+            conversation.push_back(std::move(*optionalMessage));
+
             std::string requestBody = translator->createRequest(conversation, tools);
             std::string authHeader = "Authorization: Bearer " + std::string(apiKey);
             std::vector<std::string> headers = {
@@ -179,7 +186,7 @@ void run() {
 
             if (responseMessage->tool_calls.size() == 0) {
                 std::cout << responseMessage->content << std::endl;
-                break;
+                // break;
             }
             for (const std::map<std::string, std::string>& tool_call : responseMessage->tool_calls) {
 
@@ -225,7 +232,8 @@ void run() {
 
 
                 // add the tool result message to the conversation
-                conversation.push_back(std::move(toolResultMessage));
+                deque.push_front(std::move(toolResultMessage));
+                spdlog::info("tool result saved in conversation");
             }
         } while (true);
     } catch (const llm::HTTPException& e) {
@@ -253,6 +261,22 @@ int main(int argc, char* argv[]) {
         spdlog::set_level(spdlog::level::info);
     }
 
-    run();
+    async_deque::AsyncDeque<std::unique_ptr<Message>> deque;
+    std::vector<std::string> prompts = {
+        "Can you tell me a joke, please?",
+        "Can you tell me another one?",
+        "What about an inspiring anecdote?",
+        "What's the weather like in Vancouver, BC, Canada?",
+        "What's that in Celsius?",
+    };
+    std::unique_ptr<Message> message = nullptr;
+
+    for (const std::string& prompt : prompts) {
+        message = std::make_unique<Message>(Message::Type::User);
+        message->content = prompt;
+        deque.push_back(std::move(message));
+    }
+
+    run(deque);
     return 0;
 }
