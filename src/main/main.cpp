@@ -4,6 +4,8 @@
 #include "exceptions/llm_exceptions.hpp"
 #include "core/message.hpp"
 #include "core/tool.hpp"
+#include "core/source.hpp"
+#include "core/streamsource.hpp"
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -11,6 +13,7 @@
 #include <async_deque/async_deque.hpp>
 
 #include <iostream>
+#include <fstream>
 #include <memory>
 #include <vector>
 #include <future>
@@ -43,7 +46,7 @@ std::string fahrenheitToCelsius(std::string paramsJson) {
     return std::to_string(celsius);
 }
 
-void run(async_deque::AsyncDeque<std::unique_ptr<Message>>& deque) {
+void run(Source& source, std::vector<std::unique_ptr<Message>>& conversation) {
     try {
 
         // const std::string chatUri = "https://api.venice.ai/api/v1/chat/completions";
@@ -107,11 +110,6 @@ void run(async_deque::AsyncDeque<std::unique_ptr<Message>>& deque) {
 
         auto httpClient = std::make_unique<http_client::CurlHTTPClient>();
         auto translator = std::make_unique<OpenAITranslator>();
-        std::vector<std::unique_ptr<Message>> conversation;
-
-        auto systemMessage = std::make_unique<Message>(Message::Type::System);
-        systemMessage->content = R"(You are a helpful assistant.  If you are asked for the weather, please use the "get_weather" tool to get the current weather for any given location.)";
-        conversation.push_back(std::move(systemMessage));
 
         spdlog::info("Creating weather tool");
         Tool weatherTool;
@@ -142,19 +140,57 @@ void run(async_deque::AsyncDeque<std::unique_ptr<Message>>& deque) {
 
         std::vector<Tool> tools = {weatherTool, fahrenheitToCelsiusTool};
 
+        async_deque::AsyncDeque<std::unique_ptr<Message>> cache;
+
         do {
-            if (deque.empty()) {
-                std::cerr << "Deque is empty." << std::endl;
-                break;
+            std::cerr << "Looping..." << std::endl;
+
+            // we need the next message.  we will either get that from
+            // the cache, or create a new one from a prompt from the
+            // source.
+            std::unique_ptr<Message> message{nullptr};
+
+            {
+                std::optional<std::string> prompt{std::nullopt};
+
+                // do we have any cached messages to process before getting
+                // the next prompt?
+                if (!cache.empty()) {
+                    message = std::move(*(cache.pop_front()));
+                    std::cerr << "Got a message from the cache: " << message->content << std::endl;
+                } else {
+
+                    // if there was nothing in the cache. get the next prompt
+                    prompt = source.get();
+
+                    if (!prompt) {
+
+                        // no next prompt, so we must be done
+                        std::cerr << "script is done." << std::endl;
+                        break;
+                    }
+
+                    // if prompt starts with #system, then it is a system
+                    // message, otherwise it is a user message
+                    if (prompt->find("#system") == 0) {
+                        message = std::make_unique<Message>(Message::Type::System);
+                        message->content = prompt->substr(7);
+                        std::cerr << "System message: " << message->content << std::endl;
+
+                        // system messages are not sent to the API alone
+                        // so we continue to the next iteration
+                        conversation.push_back(std::move(message));
+                        continue;
+                    } else {
+                        message = std::make_unique<Message>(Message::Type::User);
+                        message->content = *prompt;
+                        std::cerr << "User message: " << message->content << std::endl;
+                    }
+                    message->model = modelName;
+                }
             }
 
-            std::cerr << "Looping..." << std::endl;
-            auto optionalMessage = deque.pop_front();
-            if (!optionalMessage) {
-                break;
-            }
-            (*optionalMessage)->model = modelName;
-            conversation.push_back(std::move(*optionalMessage));
+            conversation.push_back(std::move(message));
 
             std::string requestBody = translator->createRequest(conversation, tools);
             std::string authHeader = "Authorization: Bearer " + std::string(apiKey);
@@ -164,7 +200,8 @@ void run(async_deque::AsyncDeque<std::unique_ptr<Message>>& deque) {
                 authHeader
             };
 
-            std::future<http_client::HTTPResponse> responseFuture = 
+            std::cerr << "Sending request" << std::endl;
+            std::future<http_client::HTTPResponse> responseFuture =
                 httpClient->Post(chatUri, requestBody, headers);
 
             http_client::HTTPResponse response = responseFuture.get();
@@ -180,13 +217,15 @@ void run(async_deque::AsyncDeque<std::unique_ptr<Message>>& deque) {
                 std::cerr << "Failed to parse the response." << std::endl;
                 return;
             }
-            // make a copy for the conversation
-            auto responseMessageCopy = std::make_unique<Message>(*responseMessage);
-            conversation.push_back(std::move(responseMessageCopy));
+
+            {
+                // make a copy for the conversation
+                auto responseMessageCopy = std::make_unique<Message>(*responseMessage);
+                conversation.push_back(std::move(responseMessageCopy));
+            }
 
             if (responseMessage->tool_calls.size() == 0) {
                 std::cout << responseMessage->content << std::endl;
-                // break;
             }
             for (const std::map<std::string, std::string>& tool_call : responseMessage->tool_calls) {
 
@@ -204,9 +243,9 @@ void run(async_deque::AsyncDeque<std::unique_ptr<Message>>& deque) {
                 std::string toolCallId = toolCallIdIt->second;
 
                 // find the tool by name
-                auto toolIt = std::find_if(tools.begin(), tools.end(), 
+                auto toolIt = std::find_if(tools.begin(), tools.end(),
                     [&toolName](const Tool& tool) { return tool.name == toolName; }
-                ); 
+                );
                 if (toolIt == tools.end()) {
                     throw llm::LLMException("Didn't find the tool");
                 }
@@ -232,7 +271,7 @@ void run(async_deque::AsyncDeque<std::unique_ptr<Message>>& deque) {
 
 
                 // add the tool result message to the conversation
-                deque.push_front(std::move(toolResultMessage));
+                cache.push_front(std::move(toolResultMessage));
                 spdlog::info("tool result saved in conversation");
             }
         } while (true);
@@ -249,34 +288,60 @@ void run(async_deque::AsyncDeque<std::unique_ptr<Message>>& deque) {
 
 int main(int argc, char* argv[]) {
 
+    std::vector<std::string> filenames;
+    std::optional<std::string> logLevel = std::nullopt;
+    enum class ArgvState {
+        None,
+        Filename,
+        LogLevel
+    } argvState = ArgvState::None;
+    for (int i = 1; i < argc; i++) {
+        if (argvState == ArgvState::None) {
+            if (std::string(argv[i]) == "--filename") {
+                argvState = ArgvState::Filename;
+            } else if (std::string(argv[i]) == "--log-level") {
+                argvState = ArgvState::LogLevel;
+            } else {
+                std::cerr << "Unknown argument: " << argv[i] << std::endl;
+                return 1;
+            }
+        } else if (argvState == ArgvState::Filename) {
+            std::string filename = std::string(argv[i]);
+            filenames.push_back(filename);
+            argvState = ArgvState::None;
+        } else if (argvState == ArgvState::LogLevel) {
+            logLevel = std::string(argv[i]);
+            argvState = ArgvState::None;
+        }
+    }
+    if (argvState != ArgvState::None) {
+        std::cerr << "Missing argument value" << std::endl;
+        return 1;
+    }
+
     // Set up logging
     auto console = spdlog::stdout_color_mt("console");
     spdlog::set_default_logger(console);
 
     // Set log level based on command line argument
-    if (argc > 1 && std::string(argv[1]) == "--debug") {
-        spdlog::set_level(spdlog::level::debug);
-        spdlog::debug("Debug logging enabled");
-    } else {
-        spdlog::set_level(spdlog::level::info);
+    if (logLevel) {
+        if (logLevel == "--debug") {
+            spdlog::set_level(spdlog::level::debug);
+            spdlog::debug("Debug logging enabled");
+        }
     }
 
-    async_deque::AsyncDeque<std::unique_ptr<Message>> deque;
-    std::vector<std::string> prompts = {
-        "Can you tell me a joke, please?",
-        "Can you tell me another one?",
-        "What about an inspiring anecdote?",
-        "What's the weather like in Vancouver, BC, Canada?",
-        "What's that in Celsius?",
-    };
-    std::unique_ptr<Message> message = nullptr;
+    std::ifstream file(filenames[0]);
 
-    for (const std::string& prompt : prompts) {
-        message = std::make_unique<Message>(Message::Type::User);
-        message->content = prompt;
-        deque.push_back(std::move(message));
+    // Check if file opened successfully
+    if (!file.is_open()) {
+        throw std::runtime_error("Unable to open file: " + filenames[0]);
     }
 
-    run(deque);
+    StreamSource source(file);
+
+    std::vector<std::unique_ptr<Message>> conversation;
+
+    run(source, conversation);
     return 0;
 }
