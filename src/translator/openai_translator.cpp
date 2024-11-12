@@ -42,6 +42,7 @@
 }
 */
 
+
 std::string OpenAITranslator::createRequest(
     const std::vector<std::unique_ptr<Message>>& messages,
     const std::vector<Tool>& tools) const {
@@ -56,7 +57,7 @@ std::string OpenAITranslator::createRequest(
     
     const Message* messageWithSpecs = lastUserMessageIterator->get();
 
-    // Add optional parameters
+    // Add message-specific parameters
     if (messageWithSpecs->model.has_value()) { request["model"] = *messageWithSpecs->model; }
     if (messageWithSpecs->temperature.has_value()) { request["temperature"] = *messageWithSpecs->temperature; }
     if (messageWithSpecs->top_p.has_value()) { request["top_p"] = *messageWithSpecs->top_p; }
@@ -68,7 +69,7 @@ std::string OpenAITranslator::createRequest(
         request["response_format"]["type"] = *messageWithSpecs->response_format_type; 
     }
 
-    // Add messages
+    // Add messages array
     nlohmann::json messageArray = nlohmann::json::array();
     for (const auto& message : messages) {
         messageArray.push_back(messageToJSONObject(*message));
@@ -90,50 +91,14 @@ std::string OpenAITranslator::createRequest(
     return request.dump();
 }
 
-/*
-
-{
-    "id": "074b894db0de4d1584992cdffe603dc6",
-    "object": "chat.completion",
-    "created": 1729374617,
-    "model": "ministral-8b-latest",
-    "choices": [
-        {
-            "index": 0,
-            "message": {
-                "role": "assistant",
-                "content": "",
-                "tool_calls": [
-                    {
-                        "id": "dZLOXkndY",
-                        "type": "function",
-                        "function": {
-                            "name": "get_weather",
-                            "arguments": "{\"location\": \"Vancouver, BC, Canada\"}"
-                        }
-                    }
-                ]
-            },
-            "finish_reason": "tool_calls"
-        }
-    ],
-    "usage": {
-        "prompt_tokens": 132,
-        "total_tokens": 157,
-        "completion_tokens": 25
-    }
-}
-
-*/
-
 std::unique_ptr<Message> OpenAITranslator::responseToMessage(const std::string& json) const {
     try {
         nlohmann::json j = nlohmann::json::parse(json);
         std::string role = j["choices"][0]["message"]["role"];
         std::unique_ptr<Message> message = role == "assistant"
             ? std::make_unique<Message>(Message::Type::Assistant)
-            : std::make_unique<Message>(Message::Type::System)
-        ;
+            : std::make_unique<Message>(Message::Type::System);
+
         message->content = j["choices"][0]["message"]["content"];
         message->created = j["created"];
         message->finish_reason = j["choices"][0]["finish_reason"];
@@ -142,9 +107,10 @@ std::unique_ptr<Message> OpenAITranslator::responseToMessage(const std::string& 
         message->completion_tokens = j["usage"]["completion_tokens"];
         message->total_tokens = j["usage"]["total_tokens"];
 
-        // tool calls?
-        if (j["choices"][0]["message"]["tool_calls"].size() > 0) {
-            for (const auto& toolCall : j["choices"][0]["message"]["tool_calls"]) {
+        // Tool calls processing
+        const auto& messageObj = j["choices"][0]["message"];
+        if (messageObj.contains("tool_calls") && !messageObj["tool_calls"].is_null()) {
+            for (const auto& toolCall : messageObj["tool_calls"]) {
                 std::map<std::string, std::string> toolCallMap;
                 toolCallMap["id"] = toolCall["id"];
                 toolCallMap["name"] = toolCall["function"]["name"];
@@ -153,7 +119,7 @@ std::unique_ptr<Message> OpenAITranslator::responseToMessage(const std::string& 
             }
         }
 
-        return std::move(message);
+        return message;
 
     } catch (const nlohmann::json::exception& e) {
         throw llm::TranslationException(e.what());
@@ -189,6 +155,7 @@ nlohmann::json OpenAITranslator::toolToJSONObject(const Tool& tool) const {
     j["function"]["description"] = tool.description;
     j["function"]["parameters"]["type"] = "object";
     j["function"]["parameters"]["properties"] = nlohmann::json::object();
+    
     for (const auto& param : tool.parameters) {
         j["function"]["parameters"]["properties"][param.name] = parameterToJSONObject(param);
     }
@@ -215,26 +182,21 @@ nlohmann::json OpenAITranslator::messageToJSONObject(const Message& message) con
             case Message::Type::User: return "user";
             case Message::Type::Assistant: return "assistant";
             case Message::Type::ToolCall: return "tool_call";
-            // case Message::Type::ToolResult: return "function";
             case Message::Type::ToolResult: return "tool";
             default: throw llm::TranslationException("Unknown message type");
         }
     }();
+    
     j["content"] = message.content;
-    if (message.tool_call_id.has_value()) j["tool_call_id"] = *message.tool_call_id;
-    if (message.name) j["name"] = *message.name; // tool-call return value
 
-    // don't include created
-    // j["created"] = message.created;
+    // Only include tool-specific fields for tool results
+    if (message.getType() == Message::Type::ToolResult) {
+        if (message.tool_call_id) j["tool_call_id"] = *message.tool_call_id;
+        if (message.name) j["name"] = *message.name;
+    }
 
-    // Add optional fields if they are present
-    // no -- this message is about to get sent out in a request
-    // if (message.finish_reason) j["finish_reason"] = *message.finish_reason;
-    // if (message.prompt_tokens) j["prompt_tokens"] = *message.prompt_tokens;
-    // if (message.completion_tokens) j["completion_tokens"] = *message.completion_tokens;
-    // if (message.total_tokens) j["total_tokens"] = *message.total_tokens;
-
-    if (message.tool_calls.size() > 0) {
+    // Include tool calls if present
+    if (!message.tool_calls.empty()) {
         j["tool_calls"] = nlohmann::json::array();
         for (const auto& toolCall : message.tool_calls) {
             nlohmann::json toolCallJSON;

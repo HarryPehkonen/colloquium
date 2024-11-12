@@ -16,6 +16,8 @@ public:
 
     std::string to_string();
 
+    void copyTo(Message& other);
+
     std::string content;
     long long created;
     std::optional<std::string> finish_reason;
@@ -23,6 +25,8 @@ public:
     std::optional<int> completion_tokens;
     std::optional<int> total_tokens;
     std::optional<std::string> model;
+    std::optional<std::string> uri;
+    std::optional<std::string> api_key_name;
     std::optional<double> temperature;
     std::optional<double> top_p;
     std::optional<int> max_tokens;

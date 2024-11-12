@@ -37,6 +37,8 @@ std::string Message::to_string() {
         (logprobs.has_value() ? "Logprobs: " + std::to_string(logprobs.value()) + "\n" : "") +
         (max_tokens.has_value() ? "Max Tokens: " + std::to_string(max_tokens.value()) + "\n" : "") +
         (model.has_value() ? "Model: " + model.value() + "\n" : "") +
+        (uri.has_value() ? "URI: " + uri.value() + "\n" : "") +
+        (api_key_name.has_value() ? "API key name: " + api_key_name.value() + "\n" : "") +
         (name.has_value() ? "Name: " + name.value() + "\n" : "") +
         (prompt_tokens.has_value() ? "Prompt Tokens: " + std::to_string(prompt_tokens.value()) + "\n" : "") +
         (random_seed.has_value() ? "Random Seed: " + std::to_string(random_seed.value()) + "\n" : "") +
@@ -60,4 +62,25 @@ std::string Message::to_string() {
         ) + "\n" +
         "Count: " + std::to_string(tool_calls.size()) + "\n" : "")
     ;
+}
+
+void Message::copyTo(Message& other) {
+    if (uri.has_value() && !other.uri.has_value()) {
+        other.uri = uri;
+    }
+    if (api_key_name.has_value() && !other.api_key_name.has_value()) {
+        other.api_key_name = api_key_name;
+    }
+    if (temperature.has_value() && !other.temperature.has_value()) {
+        other.temperature = temperature;
+    }
+    if (top_p.has_value() && !other.top_p.has_value()) {
+        other.top_p = top_p;
+    }
+    if (max_tokens.has_value() && !other.max_tokens.has_value()) {
+        other.max_tokens = max_tokens;
+    }
+    if (model.has_value() && !other.model.has_value()) {
+        other.model = model;
+    }
 }

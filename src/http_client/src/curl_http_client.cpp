@@ -1,5 +1,6 @@
 #include "http_client/curl_http_client.hpp"
 #include "exceptions/llm_exceptions.hpp"
+#include <spdlog/spdlog.h>
 #include <sstream>
 #include <thread>
 #include <iostream>
@@ -30,12 +31,11 @@ std::future<HTTPResponse> CurlHTTPClient::Put(const std::string& uri, const std:
 }
 
 std::future<HTTPResponse> CurlHTTPClient::Post(const std::string& uri, const std::string& body, const std::vector<std::string>& headers) {
-    std::cout << "CurlHTTPClient::POST" << std::endl;
+    spdlog::debug("CurlHTTPClient::POST");
     for (const auto& header : headers) {
-        std::cout << "\t" << header << "\n";
+        spdlog::debug(header);
     };
-    std::cout << "Body: " << body;
-    std::cout << std::endl;
+    spdlog::debug("Body: {}", body);
     return PerformRequest("POST", uri, body, headers);
 }
 

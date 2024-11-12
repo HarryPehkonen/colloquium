@@ -57,6 +57,7 @@ target_link_libraries(llm_client_app
         http_client
         core
         translator
+        session
         nlohmann_json::nlohmann_json
         spdlog::spdlog
         async_deque

@@ -14,7 +14,11 @@ target_include_directories(http_client
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(http_client PRIVATE CURL::libcurl)
+target_link_libraries(http_client
+    PRIVATE
+        CURL::libcurl
+        spdlog::spdlog
+)
 
 set_target_properties(http_client PROPERTIES
     VERSION ${PROJECT_VERSION}
